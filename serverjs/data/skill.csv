@@ -1,0 +1,245 @@
+skill,area
+React,Frontend
+Angular,Frontend
+Vue.js,Frontend
+Ember.js,Frontend
+Svelte,Frontend
+Backbone.js,Frontend
+Next.js,Frontend
+Nuxt.js,Frontend
+Gatsby,Frontend
+Preact,Frontend
+Alpine.js,Frontend
+Mithril,Frontend
+Stencil,Frontend
+Solid.js,Frontend
+Inferno,Frontend
+LitElement,Frontend
+Blazor,Frontend
+Stimulus,Frontend
+Bootstrap,Frontend
+Foundation,Frontend
+Tailwind CSS,Frontend
+Bulma,Frontend
+Materialize,Frontend
+Semantic UI,Frontend
+Ant Design,Frontend
+Quasar,Frontend
+Element,Frontend
+PrimeNG,Frontend
+Kendo UI,Frontend
+ASP.NET,Backend
+Django,Backend
+Flask,Backend
+Spring,Backend
+Express.js,Backend
+Ruby on Rails,Backend
+Laravel,Backend
+Symfony,Backend
+CakePHP,Backend
+CodeIgniter,Backend
+Phoenix,Backend
+NestJS,Backend
+Koa.js,Backend
+Hapi.js,Backend
+Fastify,Backend
+Sails.js,Backend
+AdonisJS,Backend
+Fiber,Backend
+Beego,Backend
+Echo,Backend
+Gin,Backend
+Revel,Backend
+ASP.NET Core,Backend
+Play,Backend
+Grails,Backend
+Meteor,Backend
+Pyramid,Backend
+Falcon,Backend
+Tornado,Backend
+Bottle,Backend
+FastAPI,Backend
+Masonite,Backend
+Serverless,Backend
+Micro,Backend
+Tornado,Backend
+Java,Language
+Python,Language
+JavaScript,Language
+TypeScript,Language
+Ruby,Language
+PHP,Language
+C#,Language
+Go,Language
+Elixir,Language
+Swift,Language
+Kotlin,Language
+Rust,Language
+Scala,Language
+Perl,Language
+Haskell,Language
+C++,Language
+C,Language
+Objective-C,Language
+Dart,Language
+R,Language
+MATLAB,Language
+Lua,Language
+Groovy,Language
+Shell,Language
+Erlang,Language
+Unity,Game Development
+Unreal Engine,Game Development
+Godot,Game Development
+CryEngine,Game Development
+GameMaker,Game Development
+Construct,Game Development
+RPG Maker,Game Development
+Defold,Game Development
+Cocos2d,Game Development
+Phaser,Game Development
+Panda3D,Game Development
+LibGDX,Game Development
+Haxe,Game Development
+Blender,Game Development
+OpenGL,Game Development
+DirectX,Game Development
+OpenCV,Cybersecurity
+Metasploit,Cybersecurity
+Nmap,Cybersecurity
+Wireshark,Cybersecurity
+Burp Suite,Cybersecurity
+Kali Linux,Cybersecurity
+Nessus,Cybersecurity
+Snort,Cybersecurity
+Splunk,Cybersecurity
+OWASP ZAP,Cybersecurity
+Aircrack-ng,Cybersecurity
+John the Ripper,Cybersecurity
+Hashcat,Cybersecurity
+Hydra,Cybersecurity
+Ncat,Cybersecurity
+Nikto,Cybersecurity
+OpenVAS,Cybersecurity
+Docker,DevOps
+Kubernetes,DevOps
+Jenkins,DevOps
+Ansible,DevOps
+Terraform,DevOps
+Chef,DevOps
+Puppet,DevOps
+CircleCI,DevOps
+Travis CI,DevOps
+GitLab CI,DevOps
+Prometheus,DevOps
+Grafana,DevOps
+Splunk,DevOps
+ELK Stack,DevOps
+Nagios,DevOps
+Bamboo,DevOps
+Azure DevOps,DevOps
+TensorFlow,Machine Learning
+Keras,Machine Learning
+PyTorch,Machine Learning
+Scikit-learn,Machine Learning
+Pandas,Machine Learning
+NumPy,Machine Learning
+Matplotlib,Machine Learning
+Seaborn,Machine Learning
+XGBoost,Machine Learning
+LightGBM,Machine Learning
+CatBoost,Machine Learning
+OpenCV,Machine Learning
+NLTK,Machine Learning
+SpaCy,Machine Learning
+Gensim,Machine Learning
+TensorFlow,Deep Learning
+Keras,Deep Learning
+PyTorch,Deep Learning
+Caffe,Deep Learning
+MXNet,Deep Learning
+Theano,Deep Learning
+CNTK,Deep Learning
+Deeplearning4j,Deep Learning
+Chainer,Deep Learning
+NVIDIA DIGITS,Deep Learning
+OpenAI Gym,Deep Learning
+H2O.ai,AI
+Apache Mahout,AI
+Accord.NET,AI
+ML.NET,AI
+IBM Watson,AI
+Google AI Platform,AI
+Amazon SageMaker,AI
+Azure Machine Learning,AI
+Hugging Face,AI
+OpenAI,AI
+ROS,Robotics
+Gazebo,Robotics
+V-REP,Robotics
+MoveIt,Robotics
+PyRobot,Robotics
+Robot Operating System,Robotics
+Webots,Robotics
+OpenRAVE,Robotics
+Microsoft Robotics Developer Studio,Robotics
+CoppeliaSim,Robotics
+Hyperledger,Blockchain
+Ethereum,Blockchain
+Solidity,Blockchain
+Truffle,Blockchain
+Ganache,Blockchain
+Corda,Blockchain
+Quorum,Blockchain
+Polkadot,Blockchain
+Chainlink,Blockchain
+EOSIO,Blockchain
+Bitcoin,Blockchain
+Litecoin,Blockchain
+Ripple,Blockchain
+Zcash,Blockchain
+Monero,Blockchain
+Algorand,Blockchain
+Stellar,Blockchain
+Substrate,Blockchain
+Competitive Programming,Competitive Programming
+Codeforces,Competitive Programming
+Adobe Premiere Pro,Video Editing
+Final Cut Pro,Video Editing
+DaVinci Resolve,Video Editing
+Microsoft Office,MS Office
+Google Workspace,MS Office
+LibreOffice,MS Office
+Adobe Photoshop,Image Editing
+GIMP,Image Editing
+Adobe Illustrator,Illustrator
+CorelDRAW,Illustrator
+Sketch,Illustrator
+FL Studio,Music
+Ableton Live,Music
+Logic Pro,Music
+GarageBand,Music
+Acrylic Painting,Paint
+Watercolor Painting,Paint
+Oil Painting,Paint
+Debate,Debate
+Public Speaking,Anchoring
+Emceeing,Anchoring
+Team Leadership,Leadership
+Project Management,Leadership
+Strategic Planning,Leadership
+Photography,Photography
+Adobe Lightroom,Photography
+Amazon Web Services (AWS),Cloud Technology
+Microsoft Azure,Cloud Technology
+Google Cloud Platform (GCP),Cloud Technology
+IBM Cloud,Cloud Technology
+Oracle Cloud,Cloud Technology
+Salesforce,Cloud Technology
+Alibaba Cloud,Cloud Technology
+Red Hat OpenShift,Cloud Technology
+VMware Cloud,Cloud Technology
+SAP Cloud Platform,Cloud Technology
+Heroku,Cloud Technology
+DigitalOcean,Cloud Technology
+Linode,Cloud Technology

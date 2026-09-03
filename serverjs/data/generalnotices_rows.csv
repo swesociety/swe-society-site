@@ -1,0 +1,11 @@
+noticeid,notice_provider,notice_date,expire_date,headline,notice_body,picture,file
+3,13,2024-06-01,2024-06-30,Software Engineering Seminar,Join us for a seminar on the latest trends in software engineering.,seminar.jpg,seminar_details.txt
+4,13,2024-06-01,2024-06-30,Software Engineering Seminar,Join us for a seminar on the latest trends in software engineering.,seminar.jpg,seminar_details.txt
+5,13,2024-06-03,2024-07-03,Tuition Fee Payment,The tuition fee payment for the Fall semester is due by July 3 2024.,fees.jpg,payment_details.txt
+6,13,2024-06-04,2024-07-04,Guest Lecture on AI,Attend the guest lecture on Artificial Intelligence by Dr John Doe.,lecture.jpg,lecture_details.txt
+7,13,2024-06-05,2024-07-05,Workshop on Cybersecurity,Register for the upcoming workshop on cybersecurity best practices.,workshop.jpg,workshop_details.txt
+8,13,2024-06-06,2024-07-06,Graduation Ceremony,The graduation ceremony for the class of 2024 will be held on July 6 2024.,graduation.jpg,ceremony_details.txt
+9,13,2024-06-07,2024-07-07,Course Registration Open,Course registration for the Fall semester is now open.,registration.jpg,course_list.txt
+10,13,2024-06-08,2024-07-08,Midterm Exam Schedule,The midterm exam schedule has been released Please check the details.,exams.jpg,exam_schedule.txt
+11,13,2024-06-09,2024-07-09,Internship Opportunities,Explore the latest internship opportunities available for software engineering students.,internship.jpg,internship_list.txt
+12,13,2024-06-10,2024-07-10,Fee Waiver Application,Applications for fee waivers are now open for eligible students.,fee_waiver.jpg,application_form.txt
