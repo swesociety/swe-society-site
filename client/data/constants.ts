@@ -1,0 +1,3 @@
+export const CLOUDINARY_CLOUD_NAME="djx7nzzzq"
+export const CLOUDINARY_API_KEY="585451963232327"
+export const CLOUDINARY_API_SECRET="bCGSs3Z8qGC6afVh1i-5HsuypE0"
