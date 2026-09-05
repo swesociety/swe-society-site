@@ -37,7 +37,6 @@ async function addPaymentTypeMethodACL() {
     process.exitCode = 1;
   } finally {
     client.release();
-    await pool.end();
   }
 }
 

@@ -14,8 +14,6 @@ async function addPaymentAuditors() {
   } catch (error) {
     console.error("❌ Migration failed (add_payment_auditors):", error);
     process.exitCode = 1;
-  } finally {
-    await pool.end();
   }
 }
 
