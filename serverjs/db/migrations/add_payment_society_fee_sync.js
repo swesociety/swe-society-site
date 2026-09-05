@@ -19,8 +19,6 @@ async function addPaymentSocietyFeeSync() {
   } catch (error) {
     console.error("Payment and society fee sync migration failed:", error);
     process.exitCode = 1;
-  } finally {
-    await pool.end();
   }
 }
 

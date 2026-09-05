@@ -41,10 +41,6 @@ async function createTables() {
             billingaclid INT REFERENCES BillingACL(billingaclid) ON DELETE SET NULL
         );
 
-        ALTER TABLE Roles ADD COLUMN IF NOT EXISTS achievementmanageaccess BOOLEAN DEFAULT FALSE;
-        ALTER TABLE Roles ADD COLUMN IF NOT EXISTS userblogaccess BOOLEAN DEFAULT FALSE;
-        ALTER TABLE Roles ADD COLUMN IF NOT EXISTS billingaccess BOOLEAN DEFAULT FALSE;
-        ALTER TABLE Roles ADD COLUMN IF NOT EXISTS billingaclid INT REFERENCES BillingACL(billingaclid) ON DELETE SET NULL;
 
         CREATE TABLE IF NOT EXISTS Users (
             userId SERIAL PRIMARY KEY,
