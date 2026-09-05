@@ -1,4 +1,5 @@
 import { BillingACL, Role } from "@/data/types";
+import { RolePermissionField } from "./PermissionGroup";
 
 // ─── Label formatter ──────────────────────────────────────────────────────────
 
@@ -68,7 +69,7 @@ export const DEFAULT_BILLING_ACL: Omit<BillingACL, "billingaclid"> = {
  * Ordered groups of boolean Role fields shown as checkboxes.
  * `billingacl` is excluded here — it is rendered separately by BillingACLSection.
  */
-export const PERMISSION_GROUPS: Record<string, (keyof Role)[]> = {
+export const PERMISSION_GROUPS: Record<string, RolePermissionField[]> = {
   "Content Management": ["blogaccess", "noticeaccess", "landingpageaccess"],
   "User Features": [
     "achievementaccess",
