@@ -1,6 +1,7 @@
 const errorWrapper = require("../middlewares/errorWrapper.js");
 const CustomError = require("../services/CustomError.js");
 const pool = require("../db/dbconnect.js").pool;
+const { logActivity } = require("../services/activityLogService.js");
 
 // Create a new team
 const createTeam = errorWrapper(

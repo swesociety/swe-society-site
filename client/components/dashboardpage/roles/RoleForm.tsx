@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { BillingACL, Role } from "@/data/types";
 import BillingACLSection from "./BillingACLSection";
 import PermissionGroup from "./PermissionGroup";
+import { RolePermissionField } from "./PermissionGroup";
 import { PERMISSION_GROUPS } from "./roleConstants";
 
 interface RoleFormProps {
@@ -24,6 +25,10 @@ interface RoleFormProps {
    * are mounted in the same React tree.
    */
   idPrefix: string;
+  /**
+   * Fields that should be rendered as disabled checkboxes.
+   */
+  disabledFields?: RolePermissionField[];
 }
 
 /**
@@ -39,6 +44,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
   onChange,
   onBillingACLChange,
   idPrefix,
+  disabledFields,
 }) => (
   <div className="space-y-6">
     {/* ── Role title ──────────────────────────────────────────────── */}
@@ -65,6 +71,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
           roleData={data}
           onChange={(field, value) => onChange(field, value)}
           idPrefix={idPrefix}
+          disabledFields={disabledFields}
         />
       ))}
     </div>

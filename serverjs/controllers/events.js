@@ -1,6 +1,7 @@
 const errorWrapper = require("../middlewares/errorWrapper.js");
 const CustomError = require("../services/CustomError.js");
 const pool = require("../db/dbconnect.js").pool;
+const { logActivity } = require("../services/activityLogService.js");
 
 
 const createEvent = errorWrapper(
@@ -41,6 +42,16 @@ const createEvent = errorWrapper(
         coverphoto
       ]
     )
+
+    await logActivity({
+      req,
+      action: "event.create",
+      category: "event",
+      targetType: "event",
+      targetId: rows[0].eventid,
+      description: `Created event: ${headline}`,
+      metadata: { headline, start_time, end_time }
+    });
 
     res.status(201).json(rows[0])
   },

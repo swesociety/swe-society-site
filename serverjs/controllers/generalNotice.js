@@ -1,6 +1,7 @@
 const errorWrapper = require("../middlewares/errorWrapper.js");
 const CustomError = require("../services/CustomError.js");
 const pool = require("../db/dbconnect.js").pool;
+const { logActivity } = require("../services/activityLogService.js");
 
 
 const createNotice = errorWrapper(
@@ -29,6 +30,16 @@ const createNotice = errorWrapper(
         file
       ]
     )
+
+    await logActivity({
+      req,
+      action: "notice.create",
+      category: "notice",
+      targetType: "notice",
+      targetId: rows[0].noticeid,
+      description: `Created notice: ${headline}`,
+      metadata: { headline, notice_date, expire_date }
+    });
 
     res.status(201).json(rows[0])
   },

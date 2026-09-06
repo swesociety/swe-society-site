@@ -7,6 +7,7 @@ const { election_status } = require("../services/electionStatus.js");
 const bcrypt = require("bcrypt");
 const { xorEncrypt, reqSalt_keys, xorDecrypt } = require("../services/encryption.js");
 const pool = require("../db/dbconnect.js").pool;
+const { logActivity } = require("../services/activityLogService.js");
 
 
 const createUser = errorWrapper(
@@ -94,6 +95,14 @@ const login = errorWrapper(
       }
 
       if (!isPasswordValid) {
+        await logActivity({
+          req,
+          action: "auth.login",
+          category: "auth",
+          description: `Failed login attempt for regno: ${regno}`,
+          metadata: { regno },
+          status: "fail",
+        });
         throw new CustomError("Invalid Credentials", 401)
       }
 
@@ -105,6 +114,17 @@ const login = errorWrapper(
         },
         longsession ? "30d" : "1h"
       )
+
+      // Attach jwtPayload so logActivity can pick up userid
+      req.jwtPayload = { userid: rows[0].userid, regno: rows[0].regno };
+      await logActivity({
+        req,
+        action: "auth.login",
+        category: "auth",
+        description: `User logged in`,
+        metadata: { regno, longsession: !!longsession },
+        status: "success",
+      });
 
       res.json({ user: rows[0], token, electionid: election_ids, candidate_stauts: candidate_stauts })
     }
@@ -237,6 +257,20 @@ const createMultiUsersWithMailSend = errorWrapper(
           message: "All users created successfully"
         })
       }
+
+      await logActivity({
+        req,
+        action: "user.bulk_create",
+        category: "user",
+        description: `Admin bulk created ${users.length} users (${failedUsers.length} failed)`,
+        metadata: { 
+          total_attempted: users.length, 
+          failed_count: failedUsers.length,
+          failed_users: failedUsers.map(u => u.regno)
+        },
+        status: failedUsers.length === users.length ? "fail" : "success"
+      });
+
     } catch (error) {
       console.error("Error fetching default role:", error)
       res.status(500).json({
@@ -283,6 +317,15 @@ const updateUserPassword = errorWrapper(
         `regno: ${regno}<br>email: ${email}<br>password: ${newPassword}<br><br>Regards,<br>SWE Society Committee`
       )
 
+      await logActivity({
+        req,
+        action: "user.password_reset_by_admin",
+        category: "auth",
+        targetType: "user",
+        targetId: userid,
+        description: `Admin reset password for user ${regno}`,
+      });
+
       // Return the userid in the response
       res.status(200).json({ userid })
     } catch (error) {
@@ -323,6 +366,14 @@ const changePass = errorWrapper(
         `Your password for the SWE Society account associated with registration number ${regno} has been successfully changed. If you did not initiate this change, please contact our committeee immediately.<br><br>Regards,<br><strong>SWE Society Committee</strong><br><br>`,
         `<p style="text-align: center;"><span style="font-size: 12px;">This is an automated message. Please do not reply to this email.</span></p>`
       )
+
+      await logActivity({
+        req,
+        action: "user.password_change",
+        category: "auth",
+        description: `User ${regno} changed their password`,
+      });
+
       res.json({ message: "Password changed successfully" })
     }
   },
@@ -376,6 +427,13 @@ const generateOTPForUser = errorWrapper(
         "Your password reset OTP is:",
         `OTP: ${otp}<br>This OTP will expire in 5 minutes.<br><br>If you didn't request this, please ignore this email.<br><br>Regards,<br>SWE Society Committee`
       )
+
+      await logActivity({
+        req,
+        action: "auth.otp_generated",
+        category: "auth",
+        description: `OTP generated for password reset for ${regno}`,
+      });
 
       res.status(201).json({
         message: "OTP generated and sent successfully"
@@ -458,6 +516,13 @@ const verifyOTP = errorWrapper(
         `Your password has been reset successfully. Here are your new credentials:`,
         `Registration Number: ${regno}<br>Email: ${email}<br>New Password: ${newPassword}<br><br>Please change your password after logging in.<br><br>Regards,<br>SWE Society Committee`
       )
+
+      await logActivity({
+        req,
+        action: "auth.otp_password_reset",
+        category: "auth",
+        description: `User ${regno} reset password via OTP`,
+      });
 
       res.status(200).json({
         message:
@@ -688,6 +753,16 @@ const signup = errorWrapper(
     res.status(201).json({
       message: "Account created successfully",
       user: rows[0]
+    });
+
+    req.jwtPayload = { userid: rows[0].userid, regno: rows[0].regno };
+    await logActivity({
+      req,
+      action: "auth.signup",
+      category: "auth",
+      description: `New user signed up: ${regno}`,
+      metadata: { regno, email },
+      status: "success"
     });
   },
   { statusCode: 500, message: "Couldn't create account" }

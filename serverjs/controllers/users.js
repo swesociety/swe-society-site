@@ -2,6 +2,7 @@ const errorWrapper = require("../middlewares/errorWrapper.js");
 const CustomError = require("../services/CustomError.js");
 const pool = require("../db/dbconnect.js").pool;
 const { getUserProfileById } = require("../services/userService.js");
+const { logActivity } = require("../services/activityLogService.js");
 
 const updateUser = errorWrapper(
   async (req, res) => {
@@ -72,6 +73,16 @@ const updateUser = errorWrapper(
       if (rows.length === 0) {
         throw new CustomError("User not found", 404)
       }
+
+      await logActivity({
+        req,
+        action: "user.profile_update",
+        category: "user",
+        targetType: "user",
+        targetId: userId,
+        description: `User profile updated`,
+        metadata: { updated_fields: Object.keys(updates).filter(k => allowedFields.includes(k)) }
+      });
 
       res.json(rows[0])
     } catch (error) {
@@ -149,6 +160,15 @@ const deleteUser = errorWrapper(
       throw new CustomError("User not found", 404)
     }
 
+    await logActivity({
+      req,
+      action: "user.delete",
+      category: "user",
+      targetType: "user",
+      targetId: userId,
+      description: `Deleted user ${userId}`,
+    });
+
     res.json({ message: "User deleted successfully" })
   },
   { statusCode: 500, message: `Couldn't delete User` }
@@ -190,6 +210,14 @@ const deleteMultipleUser = errorWrapper(
       throw new CustomError("No users found to delete", 404)
     }
 
+    await logActivity({
+      req,
+      action: "user.bulk_delete",
+      category: "user",
+      description: `Bulk deleted ${rowCount} users`,
+      metadata: { deleted_userids: userId }
+    });
+
     res.json({
       message: `${rowCount} user(s) deleted successfully`
     })
@@ -218,6 +246,7 @@ const roleAccess = errorWrapper(
     billingaccess           AS billing,
     statisticsaccess        AS statistics,
     standingsaccess         AS standings,
+    activitylogaccess       AS activitylog,
     -- BillingACL columns (null if no ACL linked to this role)
     b.billingaclid,
     b.hasbillingaccess      AS acl_hasbillingaccess,
@@ -259,6 +288,7 @@ const roleAccess = errorWrapper(
       usersblog:         r.usersblog         || false,
       billing:           r.billing           || false,
       standings:         r.standings         || false,
+      activitylog:       r.activitylog       || false,
       billingacl: {
         hasBillingAccess:     r.acl_hasbillingaccess     || false,
         canVerifyTransaction: r.acl_canverifytransaction || false,
