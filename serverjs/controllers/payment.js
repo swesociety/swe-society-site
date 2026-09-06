@@ -10,6 +10,7 @@ const {
   updateBatchPaymentStatusService,
 } = require("../services/paymentService.js");
 const pool = require("../db/dbconnect.js").pool;
+const { logActivity } = require("../services/activityLogService.js");
 
 // Create Payment Type
 const createPaymentType = errorWrapper(async (req, res) => {
@@ -144,6 +145,16 @@ const updatePayment = errorWrapper(async (req, res) => {
     transaction_verified,
     payment_status,
     amount,
+  });
+
+  await logActivity({
+    req,
+    action: payment_status ? "payment.accept" : (transaction_verified ? "payment.verify" : "payment.update"),
+    category: "payment",
+    targetType: "payment",
+    targetId: paymentid,
+    description: `Updated payment status (verified: ${transaction_verified}, accepted: ${payment_status})`,
+    metadata: { transaction_verified, payment_status, amount }
   });
 
   res.status(200).json(updatedRecord);
@@ -316,6 +327,14 @@ const updateBatchPayments = errorWrapper(async (req, res) => {
     adminId,
     action,
     paymentIds,
+  });
+
+  await logActivity({
+    req,
+    action: `payment.batch_${action}`,
+    category: "payment",
+    description: `Batch payment action '${action}' executed on ${paymentIds?.length || 0} payments`,
+    metadata: { action, count: paymentIds?.length, paymentIds }
   });
 
   res.status(200).json(result);

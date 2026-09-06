@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BillingACL, Role } from "@/data/types";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import RoleForm from "./RoleForm";
 
 interface RoleEditDialogProps {
@@ -16,7 +18,7 @@ interface RoleEditDialogProps {
   onOpenChange: (open: boolean) => void;
   editRoleData: Role | null;
   onEditRoleChange: (field: keyof Role, value: any) => void;
-  onSubmit: () => void;
+  onSubmit: () => Promise<void> | void;
 }
 
 /**
@@ -33,8 +35,20 @@ const RoleEditDialog: React.FC<RoleEditDialogProps> = ({
 }) => {
   if (!editRoleData) return null;
 
+  const [pending, setPending] = useState(false);
+
   const handleBillingACLChange = (updated: BillingACL) => {
     onEditRoleChange("billingacl", updated);
+  };
+
+  const handleSubmit = async () => {
+    setPending(true);
+    try {
+      await onSubmit();
+      onOpenChange(false);
+    } finally {
+      setPending(false);
+    }
   };
 
   return (
@@ -56,16 +70,20 @@ const RoleEditDialog: React.FC<RoleEditDialogProps> = ({
               onChange={onEditRoleChange}
               onBillingACLChange={handleBillingACLChange}
               idPrefix="edit"
+              disabledFields={editRoleData.roleid === 1 ? ["isdefaultrole"] : undefined}
             />
           </div>
         </ScrollArea>
 
         <div className="flex-none mt-auto border-t bg-background p-6">
           <DialogFooter className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
               Cancel
             </Button>
-            <Button onClick={onSubmit}>Save Changes</Button>
+            <Button onClick={handleSubmit} disabled={pending}>
+              {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
           </DialogFooter>
         </div>
       </DialogContent>

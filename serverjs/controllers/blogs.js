@@ -1,6 +1,7 @@
 const errorWrapper = require("../middlewares/errorWrapper.js");
 const CustomError = require("../services/CustomError.js");
 const pool = require("../db/dbconnect.js").pool;
+const { logActivity } = require("../services/activityLogService.js");
 
 
 // Create a new blog
@@ -33,6 +34,17 @@ const createBlog = errorWrapper(
     )
 
     res.status(201).json(rows[0])
+
+    req.jwtPayload = req.jwtPayload || { userid };
+    await logActivity({
+      req,
+      action: "blog.create",
+      category: "blog",
+      targetType: "blog",
+      targetId: rows[0].blogid,
+      description: `Created blog: ${headline}`,
+      metadata: { headline, blogtype }
+    });
   },
   { statusCode: 500, message: `Couldn't create blog` }
 )

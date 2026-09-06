@@ -12,6 +12,7 @@ const pool = require("../db/dbconnect.js").pool;
 const { DateTime } = require('luxon');
 const { election_status } = require("../services/electionStatus.js");
 const jwt = require('jsonwebtoken');
+const { logActivity } = require("../services/activityLogService.js");
 // Create a new candidate
 const createCandidate = errorWrapper(  
   async (req, res) => {
@@ -70,6 +71,15 @@ const createCandidate = errorWrapper(
                   request_approval_status
                 ]
               );
+
+          await logActivity({
+            req,
+            action: "candidate.register",
+            category: "candidate",
+            targetType: "election",
+            targetId: decrypted_data.electionid,
+            description: `Candidate registered for election ID ${decrypted_data.electionid}`,
+          });
 
           return res.status(201).json({
             message: "Candidate registration successful"

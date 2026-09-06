@@ -19,6 +19,10 @@ interface PermissionGroupProps {
    * to avoid id collisions when multiple dialogs are mounted simultaneously.
    */
   idPrefix: string;
+  /**
+   * Fields that should be rendered as disabled checkboxes.
+   */
+  disabledFields?: RolePermissionField[];
 }
 
 /**
@@ -31,6 +35,7 @@ const PermissionGroup: React.FC<PermissionGroupProps> = ({
   roleData,
   onChange,
   idPrefix,
+  disabledFields,
 }) => (
   <div className="space-y-3">
     <h3 className="text-lg font-semibold text-primary">{title}</h3>
@@ -46,6 +51,7 @@ const PermissionGroup: React.FC<PermissionGroupProps> = ({
             fieldKey={key}
             checked={roleData[key] ?? false}
             onCheckedChange={(checked) => onChange(key, checked)}
+            disabled={disabledFields?.includes(key)}
           />
         );
       })}
