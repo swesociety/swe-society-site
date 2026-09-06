@@ -6,6 +6,7 @@ import {
   BookUser,
   CalendarFold,
   CreditCard,
+  History,
   Megaphone,
   NotebookPen,
   PencilRuler,
@@ -85,6 +86,20 @@ const getItem = (roleAccess: RoleAccessType): SidebarItems => {
       label: "Statistics",
       href: "/dashboard/statistics",
       Icon: BarChart2,
+    });
+  }
+
+  if (roleAccess.activitylog || roleAccess.roles) {
+    links.push({
+      label: "Activity Log",
+      href: "/dashboard/activity_log",
+      Icon: History,
+    });
+  } else {
+    links.push({
+      label: "My Activity",
+      href: "/dashboard/activity_log",
+      Icon: History,
     });
   }
   // if (roleAccess.usersblog) {

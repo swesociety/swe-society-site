@@ -2,6 +2,7 @@ const errorWrapper = require("../middlewares/errorWrapper.js");
 const CustomError = require("../services/CustomError.js");
 const pool = require("../db/dbconnect.js").pool;
 const {xorDecrypt,toISODateString,xorEncrypt,reqSalt_keys,encryptArray, decryptObject, encryptObject} = require("../services/encryption.js");
+const { logActivity } = require("../services/activityLogService.js");
 // Create a new election
 
 
@@ -64,6 +65,16 @@ const createElection = errorWrapper(
     );
 
     const encryptedRows = encryptObject(rows[0], reqSalt_keys.election.createElection);
+
+    await logActivity({
+      req,
+      action: "election.create",
+      category: "election",
+      targetType: "election",
+      targetId: rows[0].electionid,
+      description: `Created election: ${decrypted_info.election_type} ${decrypted_info.year}`,
+      metadata: { year: decrypted_info.year, election_type: decrypted_info.election_type, batch: decrypted_info.batch }
+    });
 
     res.status(201).json(encryptedRows);
   },

@@ -6,6 +6,7 @@ const pool = require("../db/dbconnect.js").pool;
 const { DateTime } = require('luxon');
 const e = require("cors");
 const { election_status } = require("../services/electionStatus.js");
+const { logActivity } = require("../services/activityLogService.js");
 
 // const createVote = errorWrapper(async (req, res) => {
 //   const { user_id, vote } = req.body;
@@ -159,6 +160,15 @@ const createVote = errorWrapper(async (req, res) => {
   `;
 
   const { rows } = await pool.query(insertQuery, params);
+
+  req.jwtPayload = req.jwtPayload || { userid: decrypted_user_id };
+  await logActivity({
+    req,
+    action: "vote.cast",
+    category: "vote",
+    description: "User cast a vote in an election",
+    metadata: { votes_count: rows.length }
+  });
 
   res.status(201).json({
     message: "Votes submitted successfully",

@@ -85,6 +85,7 @@ export const PERMISSION_GROUPS: Record<string, RolePermissionField[]> = {
     "statisticsaccess",
     "achievementmanageaccess",
     "standingsaccess",
+    "activitylogaccess",
   ],
   "Role Settings": ["isdefaultrole"],
 };
@@ -108,5 +109,6 @@ export const DEFAULT_ROLE: Omit<Role, "roleid"> = {
   rolesaccess:            false,
   statisticsaccess:       false,
   standingsaccess:        false,
+  activitylogaccess:      false,
   isdefaultrole:          false,
 };

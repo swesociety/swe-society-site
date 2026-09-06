@@ -16,6 +16,7 @@ import AdminBlogManage from "./_pages/AdminBlog";
 import AchievementManage from "./_pages/AchievementManage";
 import BillingManage from "./_pages/BillingManage";
 import Billing from "./_pages/Billing";
+import ActivityLogPage from "./_pages/ActivityLog";
 
 function Page({ params }: { params: { menuitem: string } }) {
   const [token, setToken] = useState<string | null>(null);
@@ -69,6 +70,8 @@ function Page({ params }: { params: { menuitem: string } }) {
       return <BillingManage/>;
     case "billing":
       return <Billing/>;
+    case "activity_log":
+      return <ActivityLogPage />;
 
     default:
       return (

@@ -36,6 +36,7 @@ export const fetchRoleAccess = async (): Promise<RoleAccessType> => {
       roles: false,
       billing: false,
       standings: false,
+      activitylog: false,
     };
   }
 };

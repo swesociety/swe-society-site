@@ -39,6 +39,7 @@ export interface RoleAccessType {
   ec: boolean;
   roles: boolean;
   standings: boolean;
+  activitylog: boolean;
 }
 
 export interface UserDataType {
@@ -142,6 +143,7 @@ export interface Role {
   rolesaccess: boolean;
   statisticsaccess: boolean;
   standingsaccess: boolean;
+  activitylogaccess: boolean;
   isdefaultrole: boolean;
 }
 

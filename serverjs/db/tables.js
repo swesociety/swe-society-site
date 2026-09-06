@@ -38,6 +38,7 @@ async function createTables() {
             achievementmanageaccess BOOLEAN DEFAULT FALSE,
             userblogaccess BOOLEAN DEFAULT FALSE,
             billingaccess BOOLEAN DEFAULT FALSE,
+            activitylogaccess BOOLEAN DEFAULT FALSE,
             billingaclid INT REFERENCES BillingACL(billingaclid) ON DELETE SET NULL
         );
 
@@ -312,6 +313,27 @@ async function createTables() {
             FOREIGN KEY (accepted_by) REFERENCES Users(userId) ON DELETE SET NULL
         );
 
+
+        CREATE TABLE IF NOT EXISTS ActivityLogs (
+            logid           SERIAL PRIMARY KEY,
+            actor_userid    INT,
+            actor_regno     VARCHAR(20),
+            actor_role      VARCHAR(50),
+            action          VARCHAR(100) NOT NULL,
+            category        VARCHAR(50) NOT NULL,
+            target_type     VARCHAR(50),
+            target_id       VARCHAR(50),
+            description     TEXT,
+            metadata        JSONB,
+            ip_address      VARCHAR(45),
+            status          VARCHAR(10) DEFAULT 'success',
+            created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (actor_userid) REFERENCES Users(userId) ON DELETE SET NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_activitylogs_actor ON ActivityLogs(actor_userid);
+        CREATE INDEX IF NOT EXISTS idx_activitylogs_category ON ActivityLogs(category);
+        CREATE INDEX IF NOT EXISTS idx_activitylogs_created_at ON ActivityLogs(created_at DESC);
 
         `)
     console.log("Tables created successfully")

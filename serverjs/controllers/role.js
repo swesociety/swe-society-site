@@ -6,6 +6,7 @@ const {
   formatBillingACL,
 } = require("../services/billingAclService.js");
 const pool = require("../db/dbconnect.js").pool;
+const { logActivity } = require("../services/activityLogService.js");
 
 const getAllRole = errorWrapper(
   async (req, res) => {
@@ -73,6 +74,7 @@ const createRole = errorWrapper(
       userblogaccess = false,
       billingaccess = false,
       standingsaccess = false,
+      activitylogaccess = false,
       // BillingACL fields (optional, defaults to all-false if omitted)
       billingacl
     } = req.body
@@ -125,9 +127,10 @@ const createRole = errorWrapper(
         userblogaccess,
         billingaccess,
         standingsaccess,
+        activitylogaccess,
         billingaclid
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
       RETURNING *`,
       [
         roletitle,
@@ -146,6 +149,7 @@ const createRole = errorWrapper(
         Boolean(userblogaccess),
         Boolean(billingaccess),
         Boolean(standingsaccess),
+        Boolean(activitylogaccess),
         billingaclid
       ]
     )
@@ -155,6 +159,16 @@ const createRole = errorWrapper(
       ...rows[0],
       billingacl: formatBillingACL(acl)
     }
+
+    await logActivity({
+      req,
+      action: "role.create",
+      category: "role",
+      targetType: "role",
+      targetId: rows[0].roleid,
+      description: `Created role: ${roletitle}`,
+      metadata: { roletitle, isdefaultrole }
+    });
 
     res.status(201).json(created)
   },
@@ -180,6 +194,7 @@ const updateRole = errorWrapper(
       userblogaccess = false,
       billingaccess = false,
       standingsaccess = false,
+      activitylogaccess = false,
       billingacl
     } = req.body
 
@@ -238,8 +253,9 @@ const updateRole = errorWrapper(
         achievementmanageaccess = $12,
         userblogaccess          = $13,
         billingaccess           = $14,
-        standingsaccess         = $15
-       WHERE roleid = $16
+        standingsaccess         = $15,
+        activitylogaccess       = $16
+       WHERE roleid = $17
        RETURNING *`,
       [
         roletitle,
@@ -257,6 +273,7 @@ const updateRole = errorWrapper(
         Boolean(userblogaccess),
         Boolean(billingaccess),
         Boolean(standingsaccess),
+        Boolean(activitylogaccess),
         roleid
       ]
     )
@@ -270,6 +287,15 @@ const updateRole = errorWrapper(
       `SELECT row_to_json(b) AS billingacl FROM BillingACL b WHERE billingaclid = $1`,
       [rows[0].billingaclid]
     )
+
+    await logActivity({
+      req,
+      action: "role.update",
+      category: "role",
+      targetType: "role",
+      targetId: roleid,
+      description: `Updated role ${roletitle} (ID: ${roleid})`,
+    });
 
     res.json({
       ...rows[0],
@@ -336,6 +362,15 @@ const deleteRole = errorWrapper(
     // Delete the role
     await pool.query(`DELETE FROM Roles WHERE roleid = $1`, [roleid])
 
+    await logActivity({
+      req,
+      action: "role.delete",
+      category: "role",
+      targetType: "role",
+      targetId: roleid,
+      description: `Deleted role ID ${roleid}`,
+    });
+
     res.status(204).json({ message: "Delete role successfully" })
   },
   { statusCode: 500, message: "Failed to delete role." }
@@ -383,6 +418,16 @@ const updateDefaultRole = errorWrapper(
 
       // Commit the transaction
       await pool.query("COMMIT")
+
+      await logActivity({
+        req,
+        action: "role.set_default",
+        category: "role",
+        targetType: "role",
+        targetId: roleid,
+        description: `Set role ID ${roleid} as default role`,
+      });
+
       res.json(rows[0])
     } catch (error) {
       await pool.query("ROLLBACK") // Rollback transaction on error
@@ -464,6 +509,17 @@ const assignRole = errorWrapper(
       if (rowCount === 0) {
         throw new CustomError("No users found to delete", 404)
       }
+
+      await logActivity({
+        req,
+        action: "role.assign",
+        category: "role",
+        targetType: "role",
+        targetId: roleid,
+        description: `Assigned role ID ${roleid} to ${rowCount} user(s)`,
+        metadata: { roleid, userIds }
+      });
+
       res.json({
         message: `${rowCount} user(s) role updated successfully`
       })

@@ -10,13 +10,14 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BillingACL, Role } from "@/data/types";
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import RoleForm from "./RoleForm";
 import { DEFAULT_ROLE } from "./roleConstants";
 
 interface RoleCreateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (roleData: Omit<Role, "roleid">) => void;
+  onSubmit: (roleData: Omit<Role, "roleid">) => Promise<void> | void;
 }
 
 /**
@@ -30,6 +31,7 @@ const RoleCreateDialog: React.FC<RoleCreateDialogProps> = ({
   onSubmit,
 }) => {
   const [roleData, setRoleData] = useState<Omit<Role, "roleid">>(DEFAULT_ROLE);
+  const [pending, setPending] = useState(false);
 
   const handleChange = (field: keyof Omit<Role, "roleid">, value: any) => {
     setRoleData((prev) => ({ ...prev, [field]: value }));
@@ -39,9 +41,15 @@ const RoleCreateDialog: React.FC<RoleCreateDialogProps> = ({
     setRoleData((prev) => ({ ...prev, billingacl: updated }));
   };
 
-  const handleSubmit = () => {
-    onSubmit(roleData);
-    setRoleData(DEFAULT_ROLE); // reset for next use
+  const handleSubmit = async () => {
+    setPending(true);
+    try {
+      await onSubmit(roleData);
+      setRoleData(DEFAULT_ROLE);
+      onOpenChange(false);
+    } finally {
+      setPending(false);
+    }
   };
 
   return (
@@ -69,10 +77,13 @@ const RoleCreateDialog: React.FC<RoleCreateDialogProps> = ({
 
         <div className="flex-none mt-auto border-t bg-background p-6">
           <DialogFooter className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>Create Role</Button>
+            <Button onClick={handleSubmit} disabled={pending}>
+              {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create Role
+            </Button>
           </DialogFooter>
         </div>
       </DialogContent>
