@@ -215,11 +215,6 @@ const AchievementModal: React.FC<AchievementFormProps> = ({ onClose, onAchieveme
   
   useEffect(()=>{
     
-    console.log(process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME);
-    console.log(process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY);
-    console.log(process.env.NEXT_PUBLIC_CLOUDINARY_API_SECRET);
-    console.log(process.env.NEXT_PUBLIC_IMG_UPLOAD_PRESET);
-    console.log(process.env.NEXT_PUBLIC_Assets_UPLOAD_PRESET);
   },[])
 
   const handleFileUpload = async (file: File) => {
