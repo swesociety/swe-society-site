@@ -82,15 +82,15 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, []);
 
-  // Re-fetch on initial mount or when navigating to a new route if profile is missing
+  // Fetch once on mount and once when navigating to a new route.
   useEffect(() => {
     const token = getJWT();
-    if (token && (!profile || !roleAccess)) {
+    if (token) {
       fetchProfileAndRole();
     } else if (!token) {
       setLoading(false);
     }
-  }, [pathname, fetchProfileAndRole, profile, roleAccess]);
+  }, [pathname, fetchProfileAndRole]);
 
   // Called synchronously upon login to immediately hydrate memory state
   const login = useCallback(

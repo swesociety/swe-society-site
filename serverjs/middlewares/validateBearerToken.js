@@ -1,6 +1,5 @@
-const jwt = require("jsonwebtoken");
 const CustomError = require("../services/CustomError.js");
-const { getToken } = require("../services/Token.js");
+const { getToken, verifyToken } = require("../services/Token.js");
 
 const validateBearerToken = async (req, res, next) => {
   try {
@@ -8,8 +7,7 @@ const validateBearerToken = async (req, res, next) => {
     if (!token) {
       throw new CustomError("Authorization token missing.", 401);
     }
-    const secret = "societyJwtKey";
-    const decodedToken = jwt.verify(token, secret);
+    const decodedToken = verifyToken(token);
     if (decodedToken && decodedToken.userid && decodedToken.regno) {
       req.jwtPayload = {
         userid: decodedToken.userid,
