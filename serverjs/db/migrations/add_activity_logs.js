@@ -2,6 +2,7 @@ const { pool } = require("../../db/dbconnect.js");
 
 async function addActivityLogs() {
   try {
+    console.log("Starting migration: add_activity_logs...");
     await pool.query(`
       ALTER TABLE Roles ADD COLUMN IF NOT EXISTS activitylogaccess BOOLEAN DEFAULT FALSE;
 
@@ -30,6 +31,10 @@ async function addActivityLogs() {
   } catch (error) {
     console.error("Migration add_activity_logs failed:", error);
   }
+}
+
+if (require.main === module) {
+  addActivityLogs();
 }
 
 module.exports = { addActivityLogs };
