@@ -10,7 +10,7 @@ import { useToast } from "../ui/use-toast";
 import ElectionModal from "./ElectionEditModal";
 import { formatDateDDMMYYYY } from "./functions";
 
-interface ElectionCommitteeItem {
+export interface ElectionCommitteeItem {
   electionid: number;
   year: string;
   election_type: string;

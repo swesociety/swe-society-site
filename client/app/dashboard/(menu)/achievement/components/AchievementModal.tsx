@@ -2,6 +2,7 @@
 import { BACKENDURL } from '@/data/urls';
 import React, { useEffect, useState } from 'react';
 import Select, { MultiValue, ActionMeta } from 'react-select';
+import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 import { getJWT } from '@/data/cookies/getCookies';
 import { CldUploadButton } from 'next-cloudinary';
@@ -13,15 +14,13 @@ import {
   Trash2,
   UploadCloud,
 } from 'lucide-react';
-
+import { DatePicker } from '../../../../../components/commons/DatePicker';
+import { useToast } from '../../../../../components/ui/use-toast';
 import { uploadImageToCloud } from '@/utils/ImageUploadService';
-import { useToast } from '@/components/ui/use-toast';
-import { DatePicker } from '@/components/commons/DatePicker';
 
 interface AchievementFormProps {
   onClose: () => void;
-  onAchievementEdited: () => void;
-  formDatass: FormData;
+  onAchievementAdded: () => void;
 }
 
 interface UserResponse {
@@ -37,7 +36,6 @@ interface MappedUser {
 }
 
 interface FormData {
-  achieveid: number;
   teamname: string;
   mentor: string;
   teammembers: number[];
@@ -49,19 +47,36 @@ interface FormData {
   solution: string;
   techstack: string;
   resources: string;
+  others: { othermember: string; other_member_institute: string }[];
   startdate: string;
   enddate: string;
   organizer: string;
   venu: string;
 }
 
-const EditAchievementModal: React.FC<AchievementFormProps> = ({
+const AchievementModal: React.FC<AchievementFormProps> = ({
   onClose,
-  onAchievementEdited,
-  formDatass,
+  onAchievementAdded,
 }) => {
   const [userList, setUserList] = useState<MappedUser[]>([]);
-  const [formData, setFormData] = useState<FormData>(formDatass);
+  const [formData, setFormData] = useState<FormData>({
+    teamname: '',
+    mentor: '',
+    teammembers: [] as number[],
+    eventname: '',
+    segment: '',
+    rank: '',
+    photos: [] as string[],
+    task: '',
+    solution: '',
+    techstack: '',
+    resources: '',
+    others: [] as { othermember: string; other_member_institute: string }[],
+    startdate: '',
+    enddate: '',
+    organizer: '',
+    venu: '',
+  });
   const { toast } = useToast();
 
   const handleChange = (
@@ -74,8 +89,25 @@ const EditAchievementModal: React.FC<AchievementFormProps> = ({
     }));
   };
 
+  const handleOthersChange = (index: number, field: string, value: string) => {
+    const updatedOthers = [...formData.others];
+    updatedOthers[index][field as keyof (typeof updatedOthers)[0]] = value;
+    setFormData((prev) => ({
+      ...prev,
+      others: updatedOthers,
+    }));
+  };
+
+  const addOthersField = () => {
+    setFormData((prev) => ({
+      ...prev,
+      others: [...prev.others, { othermember: '', other_member_institute: '' }],
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log(formData);
     const requiredFields = [
       'teamname',
       'eventname',
@@ -87,9 +119,11 @@ const EditAchievementModal: React.FC<AchievementFormProps> = ({
     ];
 
     const missingFields = requiredFields.filter((field) => {
-      const value = formData[field as keyof FormData];
-
-      return !value || (Array.isArray(value) && value.length === 0);
+      return (
+        !formData[field as keyof FormData] ||
+        (Array.isArray(formData[field as keyof FormData]) &&
+          formData[field as keyof FormData].length === 0)
+      );
     });
 
     if (missingFields.length > 0) {
@@ -99,12 +133,19 @@ const EditAchievementModal: React.FC<AchievementFormProps> = ({
     }
 
     const requestBody = {
+      teamname: formData.teamname,
+      mentor: formData.mentor,
+      teammembers: formData.teammembers,
+      others: formData.others.map((other) => ({
+        othermember: other.othermember,
+        other_member_institute: other.other_member_institute,
+      })),
       eventname: formData.eventname,
       segment: formData.segment,
       organizer: formData.organizer,
       venue: formData.venu,
       startdate: formData.startdate,
-      enddate: formData.enddate,
+      enddate: formData.startdate,
       rank: formData.rank,
       rankarea: 'National', // This value could be dynamic if needed
       task: formData.task,
@@ -112,11 +153,11 @@ const EditAchievementModal: React.FC<AchievementFormProps> = ({
       techstack: formData.techstack,
       resources: formData.resources,
       photos: formData.photos,
-      approval_status: true, // Assuming this is true by default, you can make it dynamic if needed
+      approval_status: false, // Assuming this is true by default, you can make it dynamic if needed
     };
 
-    const response = await axios.put(
-      `${BACKENDURL}achievement/post/${formData.achieveid}`,
+    const response = await axios.post(
+      `${BACKENDURL}achievement/post/fullachievement`,
       requestBody,
       {
         headers: {
@@ -124,14 +165,25 @@ const EditAchievementModal: React.FC<AchievementFormProps> = ({
         },
       },
     );
-    if (response.status === 201 || response.status === 200) {
-      // notify();
+    if (response.status === 201) {
       toast({
-        title: 'Achievement Updated Successfully',
+        title: 'Achievement Updated  Successfully',
         duration: 3000,
       });
-      onAchievementEdited();
+      onAchievementAdded();
+      // notify();
+
+      // window.location.reload();
     }
+  };
+
+  const handleSelectChange = (selectedOptions: MultiValue<MappedUser>) => {
+    const selectedIds = selectedOptions.map((option) => option.id);
+    setFormData((prev) => ({
+      ...prev,
+      teammembers: selectedIds,
+    }));
+    console.log(formData);
   };
 
   useEffect(() => {
@@ -171,6 +223,8 @@ const EditAchievementModal: React.FC<AchievementFormProps> = ({
     setFormData((prev) => ({ ...prev, startdate: date }));
   };
 
+  useEffect(() => {}, []);
+
   const handleFileUpload = async (file: File) => {
     try {
       const uploadedURL = await uploadImageToCloud(file);
@@ -178,6 +232,7 @@ const EditAchievementModal: React.FC<AchievementFormProps> = ({
         ...prevData,
         photos: [...prevData.photos, uploadedURL],
       }));
+      console.log('Image uploaded successfully:', uploadedURL);
     } catch (error) {
       console.error('Failed to upload image:', error);
     }
@@ -194,7 +249,7 @@ const EditAchievementModal: React.FC<AchievementFormProps> = ({
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-black text-white p-8 rounded-lg w-full max-w-2xl">
         <div className="flex justify-between">
-          <h2 className="text-2xl font-bold mb-4">Edit Achievement</h2>
+          <h2 className="text-2xl font-bold mb-4">Add Achievement</h2>
           <button
             onClick={() => {
               onClose();
@@ -215,23 +270,61 @@ const EditAchievementModal: React.FC<AchievementFormProps> = ({
             value={formData.teamname}
             onChange={(e) => handleChange(e, 'teamname')}
             className="w-full p-2 rounded bg-gray-700"
-            disabled={true}
           />
-          <div className="text-red-400 italic text-xs ">
-            Can't Change Team Related Infos
-          </div>
           <input
             type="text"
             placeholder="Mentor"
             value={formData.mentor}
             onChange={(e) => handleChange(e, 'mentor')}
             className="w-full p-2 rounded bg-gray-700"
-            disabled={true}
           />
-          <div className="text-red-400 italic text-xs">
-            Can't Change Team Related Infos
+          <Select
+            name="Team Members"
+            isMulti
+            options={userList}
+            className=" border rounded w-full   text-gray-800 bg-gray-700 leading-tight focus:outline-none"
+            onChange={handleSelectChange}
+          />
+          <div className="w-full text-sm flex justify-end">
+            <button
+              type="button"
+              onClick={addOthersField}
+              className="underline text-red-400"
+            >
+              Add member from another department / institution
+            </button>
           </div>
 
+          {formData.others.map((other, index) => (
+            <div
+              key={index}
+              id="others"
+              className=" grid grid-cols-1 md:grid-cols-2 gap-3"
+            >
+              <input
+                type="text"
+                placeholder="Other Member"
+                value={other.othermember}
+                onChange={(e) =>
+                  handleOthersChange(index, 'othermember', e.target.value)
+                }
+                className="w-full p-2 rounded bg-gray-700"
+              />
+              <input
+                type="text"
+                placeholder="Other Dept, Institute"
+                value={other.other_member_institute}
+                onChange={(e) =>
+                  handleOthersChange(
+                    index,
+                    'other_member_institute',
+                    e.target.value,
+                  )
+                }
+                className="w-full p-2 rounded bg-gray-700"
+              />
+            </div>
+          ))}
           <input
             type="text"
             placeholder="Event Name"
@@ -368,4 +461,4 @@ const EditAchievementModal: React.FC<AchievementFormProps> = ({
   );
 };
 
-export default EditAchievementModal;
+export default AchievementModal;

@@ -403,7 +403,7 @@ const getUserAchievements = errorWrapper(
 
     const { rows } = await pool.query(achievementsQuery, [userid])
 
-    res.json({ achievement: rows })
+    res.json(rows)
   },
   {
     statusCode: 500,
@@ -442,10 +442,10 @@ const getAchievementsAll = errorWrapper(
         ) AS teamMembers
     FROM
         Achievements a
-    JOIN
-        TeamMembers tm ON a.teamid = tm.teamid
-    JOIN
-        Teams t ON a.teamid = t.teamid
+    LEFT JOIN
+      TeamMembers tm ON a.teamid = tm.teamid
+    LEFT JOIN
+      Teams t ON a.teamid = t.teamid
     WHERE
         a.achieveid >= 0;
 `
