@@ -11,11 +11,11 @@ const {
 
 const { validateBearerToken } = require("../middlewares/validateBearerToken.js");
 
-  router.route("/create").post(createNotice);
+  router.route("/create").post(validateBearerToken, createNotice);
   router.route("/:noticeId").get(getNoticeById);
   router.route("/").get(getAllNotices);
-  router.route("/:noticeId").put(updateNotice);
-  router.route("/:noticeId").delete(deleteNotice);
+  router.route("/:noticeId").put(validateBearerToken, updateNotice);
+  router.route("/:noticeId").delete(validateBearerToken, deleteNotice);
 
 
   module.exports = router;

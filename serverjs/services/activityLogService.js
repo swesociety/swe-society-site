@@ -2,7 +2,7 @@ const pool = require("../db/dbconnect.js").pool;
 
 /**
  * Log an activity to the ActivityLogs table.
- * This is non-blocking — errors here never crash the main request.
+ * This is non-blocking ï¿½ errors here never crash the main request.
  *
  * @param {object} opts
  * @param {import('express').Request} opts.req   - Express request (used for IP + JWT payload)
@@ -29,9 +29,9 @@ async function logActivity({
     const actor_userid = payload?.userid ?? null;
     const actor_regno = payload?.regno ?? null;
 
-    // Resolve actor role title (best-effort, cached per-request via closure)
-    let actor_role = null;
-    if (actor_userid) {
+    // Use role from JWT payload if present; fall back to DB lookup
+    let actor_role = payload?.role ?? null;
+    if (!actor_role && actor_userid) {
       try {
         const { rows } = await pool.query(
           `SELECT r.roletitle FROM Roles r JOIN Users u ON r.roleid = u.roleid WHERE u.userid = $1 LIMIT 1`,
@@ -69,7 +69,7 @@ async function logActivity({
       ]
     );
   } catch (err) {
-    // Log to console but never throw — logging must never break the main flow
+    // Log to console but never throw ï¿½ logging must never break the main flow
     console.error("[ActivityLog] Failed to write log:", err?.message || err);
   }
 }

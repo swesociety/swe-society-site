@@ -11,6 +11,7 @@ const {
   deleteSocietyFeeRecord,
   updateBatchSocietyFeeStatusService,
 } = require("../services/societyFeeService.js");
+const { logActivity } = require("../services/activityLogService.js");
 
 const requireBillingPermission = (permission) => async (req, res, next) => {
   try {
@@ -231,6 +232,20 @@ const updateSocietyFeeStatus = errorWrapper(async (req, res) => {
     accepted_by: newAcceptedBy,
   });
 
+  await logActivity({
+    req,
+    action: changesAcceptance && targetStatus === SocietyFeeStatus.VERIFIED
+      ? ActivityAction.SOCIETY_FEE_ACCEPTED
+      : changesVerification
+        ? (isTxVerified ? ActivityAction.SOCIETY_FEE_VERIFIED : ActivityAction.SOCIETY_FEE_UNVERIFIED)
+        : ActivityAction.SOCIETY_FEE_UPDATED,
+    category: "payment",
+    targetType: "society_fee",
+    targetId: userid,
+    description: `Society fee ${semester_key} for user ${userid} — tx_verified: ${isTxVerified}, status: ${targetStatus}`,
+    metadata: { userid, semester_key, transaction_verified: isTxVerified, status: targetStatus, amount: feeAmount },
+  });
+
   res.status(200).json(fullRecord);
 }, { statusCode: 500, message: "Couldn't update 2-step verification status" });
 
@@ -265,6 +280,16 @@ const addOrEditManualSocietyFee = errorWrapper(async (req, res) => {
     accepted_by: newAcceptedBy,
   });
 
+  await logActivity({
+    req,
+    action: ActivityAction.SOCIETY_FEE_MANUAL_SAVED,
+    category: "payment",
+    targetType: "society_fee",
+    targetId: userid,
+    description: `Manual society fee record saved for user ${userid} (${semester_key}) — status: ${targetStatus}, tx_verified: ${isTxVerified}`,
+    metadata: { userid, semester_key, amount, status: targetStatus, transaction_verified: isTxVerified, transaction_id: transaction_id || null },
+  });
+
   res.status(200).json(result);
 }, { statusCode: 500, message: "Couldn't save society fee record" });
 
@@ -283,6 +308,16 @@ const deleteSocietyFee = errorWrapper(async (req, res) => {
     throw new CustomError("Society fee record not found or already deleted", 404);
   }
 
+  await logActivity({
+    req,
+    action: ActivityAction.SOCIETY_FEE_DELETED,
+    category: "payment",
+    targetType: "society_fee",
+    targetId: society_fee_id || userid,
+    description: `Society fee record deleted — ID: ${society_fee_id || "N/A"}, user: ${userid || "N/A"}, semester: ${semester_key || "N/A"}`,
+    metadata: { society_fee_id, userid, semester_key },
+  });
+
   res.status(200).json({ message: "Society fee record deleted successfully" });
 }, { statusCode: 500, message: "Couldn't delete society fee record" });
 
@@ -295,6 +330,14 @@ const updateBatchSocietyFeeStatus = errorWrapper(async (req, res) => {
     adminId,
     action,
     societyFeeIds,
+  });
+
+  await logActivity({
+    req,
+    action: action === 'verify_all' ? ActivityAction.SOCIETY_FEE_BATCH_VERIFIED : ActivityAction.SOCIETY_FEE_BATCH_ACCEPTED,
+    category: "payment",
+    description: `Batch society fee action '${action}' on ${societyFeeIds?.length || 0} record(s)`,
+    metadata: { action, count: societyFeeIds?.length, societyFeeIds },
   });
 
   res.status(200).json(result);
