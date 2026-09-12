@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -6,9 +6,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { TableProps } from "@/data/types";
-import { flexRender } from "@tanstack/react-table";
+} from '@/components/ui/table';
+import { TableProps } from '@/data/types';
+import { flexRender } from '@tanstack/react-table';
 
 export const UserTable: React.FC<TableProps & { table: any }> = ({
   table,
@@ -28,7 +28,7 @@ export const UserTable: React.FC<TableProps & { table: any }> = ({
                       ? null
                       : flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )}
                   </TableHead>
                 ))}
@@ -43,7 +43,7 @@ export const UserTable: React.FC<TableProps & { table: any }> = ({
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
@@ -64,7 +64,7 @@ export const UserTable: React.FC<TableProps & { table: any }> = ({
       </div>
       <div className="flex justify-between py-4">
         <span className="text-xs text-slate-400 mx-2">
-          Page {table.getState().pagination.pageIndex + 1} of{" "}
+          Page {table.getState().pagination.pageIndex + 1} of{' '}
           {table.getPageCount()}
         </span>
         <div className="flex space-x-2">

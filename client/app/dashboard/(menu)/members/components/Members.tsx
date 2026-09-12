@@ -1,8 +1,9 @@
 'use client';
-import AddMembers from '@/components/dashboardpage/members/AddMembers';
-import FindMembers from '@/components/dashboardpage/members/FindMembers';
-import MembersNav from '@/components/dashboardpage/members/MembersNav';
+
+import FindMembers from '@/app/dashboard/(menu)/members/components/members/FindMembers';
+import MembersNav from '@/app/dashboard/(menu)/members/components/members/MembersNav';
 import React, { useState } from 'react';
+import AddMembers from './members/AddMembers';
 
 const Members: React.FC = () => {
   const [membersOption, setMembersOption] = useState<string>('find');

@@ -4,25 +4,21 @@ import EventCard from '@/components/dashboardpage/event/EventCard';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { EventType } from '@/data/types';
-import { APIENDPOINTS } from '@/data/urls';
 import { headerConfig } from '@/lib/header_config';
-import axios, { AxiosError } from 'axios';
 import { CalendarFold, Loader2, Plus, X } from 'lucide-react';
 import { CldUploadButton } from 'next-cloudinary';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
+import { createEvent, getEvents } from '../actions';
 
 type Props = {
   initialEvents: EventType[];
 };
 
-interface EventErrorResponse {
-  message?: string;
-}
-
 const Event: React.FC<Props> = ({ initialEvents }) => {
   const { toast } = useToast();
   const [eventList, setEventList] = useState<EventType[]>(initialEvents);
   const [loading, setLoading] = useState<boolean>(false);
+  const [isTransitioning, startTransition] = useTransition();
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
   const [newEvent, setNewEvent] = useState<Partial<EventType>>({
     headline: '',
@@ -32,57 +28,53 @@ const Event: React.FC<Props> = ({ initialEvents }) => {
     coverphoto: '',
   });
 
-  const fetchEvents = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get<EventType[]>(
-        APIENDPOINTS.events.getEvents,
-      );
-      const events = response.data;
-      const now = new Date();
-      const sortedEvents = events.sort((a, b) => {
-        const isAOngoing =
-          new Date(a.start_time) <= now && now <= new Date(a.end_time);
-        const isBOngoing =
-          new Date(b.start_time) <= now && now <= new Date(b.end_time);
-        if (isAOngoing && !isBOngoing) return -1;
-        if (!isAOngoing && isBOngoing) return 1;
-        return (
-          new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
-        );
-      });
-      setEventList(sortedEvents);
-    } catch (error) {
-      toast({
-        title: 'Failed to fetch events',
-        description: 'Please try again later',
-        duration: 3000,
-      });
-    } finally {
-      setLoading(false);
-    }
+  const fetchEvents = () => {
+    startTransition(async () => {
+      setLoading(true);
+      try {
+        const events = await getEvents();
+        const now = new Date();
+        const sortedEvents = [...events].sort((a, b) => {
+          const isAOngoing =
+            new Date(a.start_time) <= now && now <= new Date(a.end_time);
+          const isBOngoing =
+            new Date(b.start_time) <= now && now <= new Date(b.end_time);
+          if (isAOngoing && !isBOngoing) return -1;
+          if (!isAOngoing && isBOngoing) return 1;
+          return (
+            new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+          );
+        });
+        setEventList(sortedEvents);
+      } catch (error) {
+        toast({
+          title: 'Failed to fetch events',
+          description: 'Please try again later',
+          duration: 3000,
+        });
+      } finally {
+        setLoading(false);
+      }
+    });
   };
 
-  const handleCreateEvent = async () => {
-    try {
-      const response = await axios.post(
-        APIENDPOINTS.events.createEvent,
-        newEvent,
-        headerConfig(),
-      );
+  const handleCreateEvent = () => {
+    startTransition(async () => {
+      setLoading(true);
+      const response = await createEvent(newEvent, headerConfig());
       if (response.status === 201) {
         toast({ title: 'Event created successfully' });
         setShowCreateForm(false);
         fetchEvents();
+      } else {
+        toast({
+          title: 'Failed to create event',
+          description: 'Please try again',
+          duration: 3000,
+        });
       }
-    } catch (err) {
-      const error = err as AxiosError<EventErrorResponse>;
-      toast({
-        title: 'Failed to create event',
-        description: error.response?.data?.message || 'Please try again',
-        duration: 3000,
-      });
-    }
+      setLoading(false);
+    });
   };
 
   const handleCoverPicUpload = (result: any) => {
@@ -96,6 +88,8 @@ const Event: React.FC<Props> = ({ initialEvents }) => {
     setNewEvent((prev) => ({ ...prev, [field]: value }));
   };
 
+  const isLoading = loading || isTransitioning;
+
   return (
     <div className="flex flex-col items-center space-y-2 pt-16 h-screen">
       <div className="sticky top-0 w-full py-8 px-6 border-b shadow-sm flex justify-between items-center bg-background z-10">
@@ -105,6 +99,7 @@ const Event: React.FC<Props> = ({ initialEvents }) => {
         <Button
           className="flex items-center gap-2 bg-red-600 text-white"
           onClick={() => setShowCreateForm((prev) => !prev)}
+          disabled={isLoading}
         >
           {showCreateForm ? (
             <>
@@ -127,12 +122,14 @@ const Event: React.FC<Props> = ({ initialEvents }) => {
             placeholder="Event Headline"
             value={newEvent.headline || ''}
             onChange={(e) => handleInputChange('headline', e.target.value)}
+            disabled={isLoading}
             className="w-full px-3 py-2 border rounded"
           />
           <textarea
             placeholder="Event Details"
             value={newEvent.event_details || ''}
             onChange={(e) => handleInputChange('event_details', e.target.value)}
+            disabled={isLoading}
             className="w-full px-3 py-2 border rounded"
           />
           <input
@@ -140,6 +137,7 @@ const Event: React.FC<Props> = ({ initialEvents }) => {
             placeholder="Start Time"
             value={newEvent.start_time || ''}
             onChange={(e) => handleInputChange('start_time', e.target.value)}
+            disabled={isLoading}
             className="w-full px-3 py-2 border rounded"
           />
           <input
@@ -147,6 +145,7 @@ const Event: React.FC<Props> = ({ initialEvents }) => {
             placeholder="End Time"
             value={newEvent.end_time || ''}
             onChange={(e) => handleInputChange('end_time', e.target.value)}
+            disabled={isLoading}
             className="w-full px-3 py-2 border rounded"
           />
           <div className="flex items-center gap-4">
@@ -167,8 +166,12 @@ const Event: React.FC<Props> = ({ initialEvents }) => {
               />
             )}
           </div>
-          <Button onClick={handleCreateEvent} className="w-full">
-            Create Event
+          <Button
+            onClick={handleCreateEvent}
+            disabled={isLoading}
+            className="w-full"
+          >
+            {isLoading ? 'Creating Event...' : 'Create Event'}
           </Button>
         </div>
       )}
