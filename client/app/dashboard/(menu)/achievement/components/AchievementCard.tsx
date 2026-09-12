@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useTransition } from 'react';
 import { MdDelete, MdModeEditOutline } from 'react-icons/md';
-import EditAchievementModal from '../../../../../components/achievementspage/dashboardcomponents.tsx/EditAchievementModal';
+import EditAchievementModal from './EditAchievementModal';
 import ConfirmationModal from '../../../../../components/commons/ConfirmationModal';
 import { getJWT } from '@/data/cookies/getCookies';
 import { useToast } from '@/components/ui/use-toast';
@@ -14,7 +14,7 @@ type Props = {
   isAdmin?: boolean;
 };
 
-const AchievementComponent: React.FC<Props> = ({
+const AchievementCard: React.FC<Props> = ({
   achievements,
   fetchDataAll,
   isAdmin,
@@ -252,4 +252,4 @@ const AchievementComponent: React.FC<Props> = ({
   );
 };
 
-export default AchievementComponent;
+export default AchievementCard;

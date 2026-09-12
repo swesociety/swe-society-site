@@ -1,6 +1,6 @@
 'use client';
 
-import AchievementComponent from '@/app/dashboard/(menu)/achievement/components/AchievementCard';
+import AchievementCard from '@/app/dashboard/(menu)/achievement/components/AchievementCard';
 import React, { useState } from 'react';
 import AchievementModal from '@/app/dashboard/(menu)/achievement/components/AchievementModal';
 import type { Achievement } from '@/app/dashboard/(menu)/achievement/types';
@@ -32,7 +32,7 @@ const AchievementManage: React.FC<AchievementManageProps> = ({
           + Add Achievement
         </button>
       </div>
-      <AchievementComponent achievements={initialAchievements} isAdmin={true} />
+      <AchievementCard achievements={initialAchievements} isAdmin={true} />
       {isModalOpen && (
         <AchievementModal
           onClose={() => setIsModalOpen(false)}
