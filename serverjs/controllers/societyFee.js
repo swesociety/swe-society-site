@@ -12,6 +12,7 @@ const {
   updateBatchSocietyFeeStatusService,
 } = require("../services/societyFeeService.js");
 const { logActivity } = require("../services/activityLogService.js");
+const { ActivityAction } = require("../services/activityActions.js");
 
 const requireBillingPermission = (permission) => async (req, res, next) => {
   try {
