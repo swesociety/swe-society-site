@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { MdDelete, MdModeEditOutline } from "react-icons/md";
 import ConfirmationModal from "../../../../../components/commons/ConfirmationModal";
 import { useToast } from "../../../../../components/ui/use-toast";
+import { getJWT } from "@/data/cookies/getCookies";
 import {
   createExecutiveCommittee,
-  ExecutiveCommittee,
-  removeExecutiveCommittee,
+  deleteExecutiveCommittee,
   updateExecutiveCommittee,
-} from "../../../../../components/electiondashboard/actions";
+} from "../actions";
+import type { ExecutiveCommittee } from "../types";
+
 
 interface ExecutiveCommitteesProps {
   committees: ExecutiveCommittee[];
@@ -26,6 +28,7 @@ const ExecutiveCommittees = ({
   const [editing, setEditing] = useState<ExecutiveCommittee | null>(null);
   const [deleting, setDeleting] = useState<ExecutiveCommittee | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, startTransition] = useTransition();
   const { toast } = useToast();
 
   const closeModal = () => {
@@ -34,43 +37,51 @@ const ExecutiveCommittees = ({
     setForm(emptyForm);
   };
 
-  const save = async (event: React.FormEvent) => {
+  const save = (event: React.FormEvent) => {
     event.preventDefault();
     const input = {
       committee_name: form.committee_name.trim(),
       year: form.year.trim(),
     };
     if (!input.committee_name || !input.year) return;
-    try {
-      if (editing) {
-        await updateExecutiveCommittee(editing.committeeid, input);
+
+    startTransition(async () => {
+      const token = getJWT() || '';
+      const response = editing
+        ? await updateExecutiveCommittee(editing.committeeid, input, token)
+        : await createExecutiveCommittee(input, token);
+
+      if (response.status === 200 || response.status === 201) {
+        closeModal();
+        onRefresh();
       } else {
-        await createExecutiveCommittee(input);
+        toast({
+          title: "Could not save committee",
+          description: response.data?.message,
+          variant: "destructive",
+        });
       }
-      closeModal();
-      await onRefresh();
-    } catch (error: any) {
-      toast({
-        title: "Could not save committee",
-        description: error?.response?.data?.message || error.message,
-        variant: "destructive",
-      });
-    }
+    });
   };
 
-  const remove = async () => {
+  const remove = () => {
     if (!deleting) return;
-    try {
-      await removeExecutiveCommittee(deleting.committeeid);
-      setDeleting(null);
-      await onRefresh();
-    } catch (error: any) {
-      toast({
-        title: "Could not delete committee",
-        description: error?.response?.data?.message || error.message,
-        variant: "destructive",
-      });
-    }
+    startTransition(async () => {
+      const response = await deleteExecutiveCommittee(
+        deleting.committeeid,
+        getJWT() || '',
+      );
+      if (response.status === 200 || response.status === 204) {
+        setDeleting(null);
+        onRefresh();
+      } else {
+        toast({
+          title: "Could not delete committee",
+          description: response.data?.message,
+          variant: "destructive",
+        });
+      }
+    });
   };
 
   const edit = (committee: ExecutiveCommittee) => {
@@ -166,8 +177,8 @@ const ExecutiveCommittees = ({
                 >
                   Cancel
                 </button>
-                <button className="rounded bg-red-700 px-4 py-2" type="submit">
-                  {editing ? "Update committee" : "Add committee"}
+                <button className="rounded bg-red-700 px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60" type="submit" disabled={loading}>
+                  {loading ? "Saving..." : editing ? "Update committee" : "Add committee"}
                 </button>
               </div>
             </form>

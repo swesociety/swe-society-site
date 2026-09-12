@@ -1,11 +1,10 @@
 'use client';
 
 import { getJWT } from '@/data/cookies/getCookies';
-import { BACKENDURL } from '@/data/urls';
-import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useState, useTransition } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import Select from 'react-select';
+import { createLegacyCommitteeMember } from '../actions';
 
 interface UserResponse {
   userid: number;
@@ -35,52 +34,46 @@ interface MemberFormData {
   electionid: number;
 }
 
-const AddCommitteeMemberModal: React.FC<{
+interface AddCommitteeMemberModalProps {
   electionId: number;
   onClose: () => void;
   fetchMembers: () => void;
-}> = ({ electionId, onClose, fetchMembers }) => {
-  const [userList, setUserList] = useState<MappedUser[]>([]);
-  const [postList, setPostList] = useState<MappedPost[]>([]);
+  users?: UserResponse[];
+  posts?: PostResponse[];
+}
+
+const AddCommitteeMemberModal: React.FC<AddCommitteeMemberModalProps> = ({
+  electionId,
+  onClose,
+  fetchMembers,
+  users = [],
+  posts = [],
+}) => {
+  const userList: MappedUser[] = useMemo(
+    () =>
+      users.map((user) => ({
+        id: user.userid,
+        value: user.userid,
+        label: `${user.fullname} - ${user.regno}`,
+      })),
+    [users],
+  );
+
+  const postList: MappedPost[] = useMemo(
+    () =>
+      posts.map((post) => ({
+        value: post.committeepostid,
+        label: post.post_name,
+      })),
+    [posts],
+  );
+
   const [members, setMembers] = useState<MemberFormData[]>([
     { userid: 0, postid: 0, electionid: electionId },
   ]);
+  const [loading, startTransition] = useTransition();
 
-  useEffect(() => {
-    // Fetch users list
-    const fetchUsers = async () => {
-      try {
-        const response = await axios.get(`${BACKENDURL}users/`);
-        const users: UserResponse[] = response.data;
-        const mappedUsers = users.map((user) => ({
-          id: user.userid,
-          value: user.userid,
-          label: `${user.fullname} - ${user.regno}`,
-        }));
-        setUserList(mappedUsers);
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      }
-    };
 
-    // Fetch post list
-    const fetchPosts = async () => {
-      try {
-        const response = await axios.get(`${BACKENDURL}election/positions`);
-        const posts: PostResponse[] = response.data;
-        const mappedPosts = posts.map((post) => ({
-          value: post.committeepostid,
-          label: post.post_name,
-        }));
-        setPostList(mappedPosts);
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-      }
-    };
-
-    fetchUsers();
-    fetchPosts();
-  }, []);
 
   const handleSelectChange = (
     selectedOption: any,
@@ -96,41 +89,32 @@ const AddCommitteeMemberModal: React.FC<{
     setMembers([...members, { userid: 0, postid: 0, electionid: electionId }]);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    try {
-      // Loop through the members and send individual API requests
-      console.log(members);
-      for (const member of members) {
-        const response = await axios.post(
-          `${BACKENDURL}election/members/create`,
-          {
-            userid: member.userid, // assuming member has userid property
-            postid: member.postid, // assuming member has postid property
-            electionid: member.electionid, // assuming member has electionid property
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${getJWT()}`,
+    startTransition(async () => {
+      try {
+        const token = getJWT() || '';
+        for (const member of members) {
+          const response = await createLegacyCommitteeMember(
+            {
+              userid: member.userid,
+              postid: member.postid,
+              electionid: member.electionid,
             },
-          },
-        );
-
-        // Handle response for each member (optional)
-        if (response.status !== 201) {
-          throw new Error(`Failed to add member with ID: ${member.userid}`);
+            token,
+          );
+          if (response.status !== 201) {
+            throw new Error(`Failed to add member with ID: ${member.userid}`);
+          }
         }
+        toast.success('Committee Members added successfully.');
+        onClose();
+        fetchMembers();
+      } catch (error) {
+        console.error('Error adding members:', error);
+        toast.error('Failed to add members.');
       }
-
-      // Show success message after all requests are completed
-      toast.success('Committee Members added successfully.');
-      onClose();
-      fetchMembers();
-    } catch (error) {
-      console.error('Error adding members:', error);
-      toast.error('Failed to add members.');
-    }
+    });
   };
 
   return (
@@ -199,9 +183,10 @@ const AddCommitteeMemberModal: React.FC<{
             </button>
             <button
               type="submit"
-              className="bg-red-600 text-white rounded px-4 py-2"
+              disabled={loading}
+              className="bg-red-600 text-white rounded px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Submit
+              {loading ? 'Submitting...' : 'Submit'}
             </button>
           </div>
         </form>

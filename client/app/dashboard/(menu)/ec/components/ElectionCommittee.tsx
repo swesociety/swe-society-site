@@ -5,18 +5,25 @@ import ElectionModal from '@/app/dashboard/(menu)/ec/components/CreateElectionMo
 import ElectionCommitteeComponent from '@/app/dashboard/(menu)/ec/components/ElectionCommitteeComponent';
 import CommitteeManagement from '@/app/dashboard/(menu)/ec/components/CommitteeManagement';
 import React, { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import type { CommitteeData, ExecutiveCommittee } from '../actions';
 import type { ElectionCommittee } from '../types';
 import { getAllElections } from '../actions';
 
 type Props = {
   initialElections: ElectionCommittee[];
   userRole: string;
+  initialCommitteeData: CommitteeData;
+  initialExecutiveCommittees: ExecutiveCommittee[];
 };
 
 const ElectionCommitteeView: React.FC<Props> = ({
   initialElections,
   userRole,
+  initialCommitteeData,
+  initialExecutiveCommittees,
 }) => {
+  const router = useRouter();
   const [electionCommittees, setElectionCommittees] =
     useState<ElectionCommittee[]>(initialElections);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -27,6 +34,10 @@ const ElectionCommitteeView: React.FC<Props> = ({
   );
   const [loading, startTransition] = useTransition();
 
+  const handleRefresh = () => {
+    router.refresh();
+  };
+
   const fetchData = () => {
     startTransition(async () => {
       const elections = await getAllElections();
@@ -36,7 +47,11 @@ const ElectionCommitteeView: React.FC<Props> = ({
 
   return (
     <div className="flex flex-col items-center space-y-2 pt-16 h-screen">
-      <CommitteeManagement />
+      <CommitteeManagement
+        committeeData={initialCommitteeData}
+        executiveCommittees={initialExecutiveCommittees}
+        onRefresh={handleRefresh}
+      />
       {!isShowFullCommitteee && (
         <>
           <div className="w-full flex justify-end ">
@@ -71,6 +86,8 @@ const ElectionCommitteeView: React.FC<Props> = ({
           <ElectionMemberDetails
             electionId={selectedElectionId}
             setShowFullCommitteee={setShowFullCommitteee}
+            users={initialCommitteeData?.users}
+            posts={initialCommitteeData?.posts}
           />
         </div>
       )}

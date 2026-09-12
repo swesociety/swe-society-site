@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import {
   AdminProfileDialog,
   AdminProfileInfo,
@@ -8,17 +8,21 @@ import {
 import { MdDelete, MdModeEditOutline } from 'react-icons/md';
 import ConfirmationModal from '../../../../../components/commons/ConfirmationModal';
 import { useToast } from '../../../../../components/ui/use-toast';
+import { getJWT } from '@/data/cookies/getCookies';
 import {
+  createCommitteeMember,
+  deleteCommitteeMember,
+  updateCommitteeMember,
+} from '../actions';
+import type {
   CommitteeElection,
   CommitteeMember,
   CommitteeMemberInput,
   CommitteePost,
   CommitteeUser,
   ExecutiveCommittee,
-  createCommitteeMember,
-  removeCommitteeMember,
-  updateCommitteeMember,
-} from '../../../../../components/electiondashboard/actions';
+} from '../types';
+
 
 interface CommitteeMembersProps {
   members: CommitteeMember[];
@@ -72,6 +76,7 @@ const CommitteeMembers = ({
   const [selectedProfile, setSelectedProfile] =
     useState<AdminProfileInfo | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [loading, startTransition] = useTransition();
   const { toast } = useToast();
 
   const resetForm = () => {
@@ -80,7 +85,7 @@ const CommitteeMembers = ({
     setIsModalOpen(false);
   };
 
-  const saveMember = async (event: React.FormEvent) => {
+  const saveMember = (event: React.FormEvent) => {
     event.preventDefault();
     const input: CommitteeMemberInput = {
       userid: Number(memberForm.userid),
@@ -135,38 +140,44 @@ const CommitteeMembers = ({
     }
 
     setIsSaving(true);
-    try {
-      if (editingMember) {
-        await updateCommitteeMember(editingMember.committeeid, input);
+    startTransition(async () => {
+      const token = getJWT() || '';
+      const response = editingMember
+        ? await updateCommitteeMember(editingMember.committeeid, input, token)
+        : await createCommitteeMember(input, token);
+
+      if (response.status === 200 || response.status === 201) {
+        resetForm();
+        onRefresh();
       } else {
-        await createCommitteeMember(input);
+        toast({
+          title: 'Could not save committee member',
+          description: response.data?.message,
+          variant: 'destructive',
+        });
       }
-      resetForm();
-      await onRefresh();
-    } catch (error: any) {
-      toast({
-        title: 'Could not save committee member',
-        description: error?.response?.data?.message || error.message,
-        variant: 'destructive',
-      });
-    } finally {
       setIsSaving(false);
-    }
+    });
   };
 
-  const deleteMember = async () => {
+  const deleteMember = () => {
     if (!deletingMember) return;
-    try {
-      await removeCommitteeMember(deletingMember.committeeid);
-      setDeletingMember(null);
-      await onRefresh();
-    } catch (error: any) {
-      toast({
-        title: 'Could not delete committee member',
-        description: error?.response?.data?.message || error.message,
-        variant: 'destructive',
-      });
-    }
+    startTransition(async () => {
+      const response = await deleteCommitteeMember(
+        deletingMember.committeeid,
+        getJWT() || '',
+      );
+      if (response.status === 200 || response.status === 204) {
+        setDeletingMember(null);
+        onRefresh();
+      } else {
+        toast({
+          title: 'Could not delete committee member',
+          description: response.data?.message,
+          variant: 'destructive',
+        });
+      }
+    });
   };
 
   const startEdit = (member: CommitteeMember) => {
@@ -425,9 +436,9 @@ const CommitteeMembers = ({
                 <button
                   className="rounded bg-red-700 px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
                   type="submit"
-                  disabled={isSaving}
+                  disabled={isSaving || loading}
                 >
-                  {isSaving
+                  {isSaving || loading
                     ? 'Saving...'
                     : editingMember
                       ? 'Update member'

@@ -1,15 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { MdDelete, MdModeEditOutline } from 'react-icons/md';
 import ConfirmationModal from '../../../../../components/commons/ConfirmationModal';
 import { useToast } from '../../../../../components/ui/use-toast';
+import { getJWT } from '@/data/cookies/getCookies';
 import {
-  CommitteePost,
   createCommitteePost,
-  removeCommitteePost,
+  deleteCommitteePost,
   updateCommitteePost,
-} from '../../../../../components/electiondashboard/actions';
+} from '../actions';
+import type { CommitteePost } from '../types';
+
 
 interface CommitteePostsProps {
   posts: CommitteePost[];
@@ -21,6 +23,7 @@ const CommitteePosts = ({ posts, onRefresh }: CommitteePostsProps) => {
   const [editingPost, setEditingPost] = useState<CommitteePost | null>(null);
   const [deletingPost, setDeletingPost] = useState<CommitteePost | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, startTransition] = useTransition();
   const { toast } = useToast();
 
   const resetForm = () => {
@@ -29,41 +32,48 @@ const CommitteePosts = ({ posts, onRefresh }: CommitteePostsProps) => {
     setIsModalOpen(false);
   };
 
-  const savePost = async (event: React.FormEvent) => {
+  const savePost = (event: React.FormEvent) => {
     event.preventDefault();
     const name = postName.trim();
     if (!name) return;
 
-    try {
-      if (editingPost) {
-        await updateCommitteePost(editingPost.committeepostid, name);
+    startTransition(async () => {
+      const token = getJWT() || '';
+      const response = editingPost
+        ? await updateCommitteePost(editingPost.committeepostid, name, token)
+        : await createCommitteePost(name, token);
+
+      if (response.status === 200 || response.status === 201) {
+        resetForm();
+        onRefresh();
       } else {
-        await createCommitteePost(name);
+        toast({
+          title: 'Could not save committee post',
+          description: response.data?.message,
+          variant: 'destructive',
+        });
       }
-      resetForm();
-      await onRefresh();
-    } catch (error: any) {
-      toast({
-        title: 'Could not save committee post',
-        description: error?.response?.data?.message || error.message,
-        variant: 'destructive',
-      });
-    }
+    });
   };
 
-  const deletePost = async () => {
+  const handleDeletePost = () => {
     if (!deletingPost) return;
-    try {
-      await removeCommitteePost(deletingPost.committeepostid);
-      setDeletingPost(null);
-      await onRefresh();
-    } catch (error: any) {
-      toast({
-        title: 'Could not delete committee post',
-        description: error?.response?.data?.message || error.message,
-        variant: 'destructive',
-      });
-    }
+    startTransition(async () => {
+      const response = await deleteCommitteePost(
+        deletingPost.committeepostid,
+        getJWT() || '',
+      );
+      if (response.status === 200 || response.status === 204) {
+        setDeletingPost(null);
+        onRefresh();
+      } else {
+        toast({
+          title: 'Could not delete committee post',
+          description: response.data?.message,
+          variant: 'destructive',
+        });
+      }
+    });
   };
 
   return (
@@ -138,8 +148,12 @@ const CommitteePosts = ({ posts, onRefresh }: CommitteePostsProps) => {
                 >
                   Cancel
                 </button>
-                <button className="rounded bg-red-700 px-4 py-2" type="submit">
-                  {editingPost ? 'Update post' : 'Add post'}
+              <button className="rounded bg-red-700 px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60" type="submit" disabled={loading}>
+                  {loading
+                    ? 'Saving...'
+                    : editingPost
+                      ? 'Update post'
+                      : 'Add post'}
                 </button>
               </div>
             </form>
@@ -151,7 +165,7 @@ const CommitteePosts = ({ posts, onRefresh }: CommitteePostsProps) => {
           title="Delete committee post?"
           subtitle="Existing committee assignments using this post may prevent deletion."
           confirmButtonTitle="Delete"
-          onConfirm={deletePost}
+          onConfirm={handleDeletePost}
           onCancel={() => setDeletingPost(null)}
         />
       )}

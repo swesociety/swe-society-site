@@ -42,7 +42,10 @@ interface Member {
 interface ElectionMemberDetailsProps {
   electionId: number;
   setShowFullCommitteee: React.Dispatch<React.SetStateAction<boolean>>;
+  users?: { userid: number; fullname: string; regno: string }[];
+  posts?: { committeepostid: number; post_name: string }[];
 }
+
 
 const electionStatusButtons = [
   {
@@ -78,6 +81,8 @@ const electionStatusButtons = [
 const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
   electionId,
   setShowFullCommitteee,
+  users,
+  posts,
 }) => {
   const [election_state, setElection_state] =
     useState<string>('Set Election state');
@@ -418,6 +423,8 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
           electionId={electionId}
           onClose={() => setIsModalOpen(false)}
           fetchMembers={fetchMembers}
+          users={users}
+          posts={posts}
         />
       )}
     </>

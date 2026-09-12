@@ -5,18 +5,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { APIENDPOINTS, BACKENDURL } from '@/data/urls';
+import { BACKENDURL } from '@/data/urls';
 import { addDays, format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useTransition } from 'react';
 import Select from 'react-select';
 import { getJWT } from '@/data/cookies/getCookies';
-import { encryptObject, reqSalt_keys } from '@/utils/encrypt_req';
-import axios from 'axios';
 import { DateTime } from 'luxon';
 import { TimePicker } from '../../../../../components/ui/time-picker';
 import { toast } from '../../../../../components/ui/use-toast';
 import { combineDateAndTime, timeZone, Validation } from '../utils';
+import { createElection } from '../actions';
 
 interface ElectionModalProps {
   onClose: () => void;
@@ -110,6 +109,7 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
   );
 
   const [disabled, setDisabled] = useState<boolean>(false);
+  const [loading, startTransition] = useTransition();
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -128,69 +128,67 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      setDisabled(true);
-      const election_info = {
-        year: formData.year,
-        election_type: formData.election_type,
-        batch: formData.election_type === 'Batch' ? formData.batch : undefined,
-        election_commissioner: formData.election_commissioner,
-        assistant_commissioner: formData.assistant_commissioner,
-        candidatereg_start:
-          DateTime.fromJSDate(candidateStartDate, {
-            zone: timeZone,
-          }).toISO() || '',
-        candidatereg_end:
-          DateTime.fromJSDate(candidateEndDate, {
-            zone: timeZone,
-          }).toISO() || '',
-        election_start: combineDateAndTime(
-          electionDate,
-          electionStart ?? new Date(electionDate),
-        ),
-        election_end: combineDateAndTime(
-          electionDate,
-          electionEnd ?? new Date(electionDate),
-        ),
-      };
-      const encrypted_info = encryptObject(
-        election_info,
-        reqSalt_keys.election.createElection,
-      );
+    const electionStartDate = combineDateAndTime(
+      electionDate,
+      electionStart ?? new Date(electionDate),
+    );
+    const electionEndDate = combineDateAndTime(
+      electionDate,
+      electionEnd ?? new Date(electionDate),
+    );
 
-      // // Validation checks
-      if (Validation(election_info) === '') {
-        const response = await axios.post(
-          `${APIENDPOINTS.election.createElection}`,
-          encrypted_info,
-          { headers: { Authorization: `Bearer ${getJWT()}` } },
-        );
-        if (response.status === 201 || response.status === 200) {
-          onClose();
-          fetchData();
-        }
+    const election_info = {
+      year: formData.year,
+      election_type: formData.election_type,
+      batch: formData.election_type === 'Batch' ? formData.batch : undefined,
+      election_commissioner: formData.election_commissioner,
+      assistant_commissioner: formData.assistant_commissioner,
+      candidatereg_start:
+        DateTime.fromJSDate(candidateStartDate, {
+          zone: timeZone,
+        }).toISO() || '',
+      candidatereg_end:
+        DateTime.fromJSDate(candidateEndDate, {
+          zone: timeZone,
+        }).toISO() || '',
+      election_start: electionStartDate,
+      election_end: electionEndDate,
+    };
+
+    const validationMessage = Validation(election_info);
+    if (validationMessage !== '') {
+      toast({
+        title: validationMessage,
+        description: 'Please fill all the fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setDisabled(true);
+    startTransition(async () => {
+      const response = await createElection(
+        {
+          ...election_info,
+          election_start: electionStartDate.toISOString(),
+          election_end: electionEndDate.toISOString(),
+        },
+        getJWT() || '',
+      );
+      if (response.status === 200 || response.status === 201) {
+        onClose();
+        fetchData();
       } else {
         toast({
-          title: Validation(election_info),
-          description: 'Please fill all the fields',
-          variant: 'destructive',
+          title: 'Failed to create election. Please try again.',
+          description: response.data?.message,
         });
       }
       setDisabled(false);
-    } catch (error) {
-      console.error('Error creating election:', error);
-
-      toast({
-        title: 'Failed to create election. Please try again.',
-        description: (error as any).message,
-      });
-      setTimeout(() => {
-        setDisabled(false);
-      }, 3000);
-    }
+    });
   };
   useEffect(() => {
     console.log(candidateStartDate);
@@ -323,11 +321,11 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
               Close
             </button>
             <button
-              disabled={disabled}
+              disabled={disabled || loading}
               onClick={handleSubmit}
-              className="bg-red-600 text-white rounded px-4 py-2"
+              className="bg-red-600 text-white rounded px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Submit
+              {loading ? 'Submitting...' : 'Submit'}
             </button>
           </div>
         </form>
