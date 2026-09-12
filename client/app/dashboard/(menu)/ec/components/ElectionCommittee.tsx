@@ -90,6 +90,25 @@ const ElectionCommitteeView: React.FC<Props> = ({
             setShowFullCommitteee={setShowFullCommitteee}
             users={initialCommitteeData?.users}
             posts={initialCommitteeData?.posts}
+            members={
+              initialCommitteeData?.members
+                ? (initialCommitteeData.members.filter(
+                    (m) => m.electionid === selectedElectionId,
+                  ) as unknown as React.ComponentProps<
+                    typeof ElectionMemberDetails
+                  >['members'])
+                : undefined
+            }
+            initialElectionStatus={
+              electionCommittees?.find(
+                (e) => e.electionid === selectedElectionId,
+              )?.status ||
+              (
+                electionCommittees?.find(
+                  (e) => e.electionid === selectedElectionId,
+                ) as unknown as { election_status?: string }
+              )?.election_status
+            }
           />
         </div>
       )}

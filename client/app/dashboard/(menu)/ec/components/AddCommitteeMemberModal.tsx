@@ -5,42 +5,12 @@ import React, { useMemo, useState, useTransition } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import Select from 'react-select';
 import { createLegacyCommitteeMember } from '../actions';
-
-interface UserResponse {
-  userid: number;
-  regno: string;
-  fullname: string;
-}
-
-interface PostResponse {
-  committeepostid: number;
-  post_name: string;
-}
-
-interface MappedUser {
-  id: number;
-  value: number;
-  label: string;
-}
-
-interface MappedPost {
-  value: number;
-  label: string;
-}
-
-interface MemberFormData {
-  userid: number;
-  postid: number;
-  electionid: number;
-}
-
-interface AddCommitteeMemberModalProps {
-  electionId: number;
-  onClose: () => void;
-  fetchMembers: () => void;
-  users?: UserResponse[];
-  posts?: PostResponse[];
-}
+import type {
+  MappedUser,
+  MappedPost,
+  MemberFormData,
+  AddCommitteeMemberModalProps,
+} from '../types';
 
 const AddCommitteeMemberModal: React.FC<AddCommitteeMemberModalProps> = ({
   electionId,
@@ -72,8 +42,6 @@ const AddCommitteeMemberModal: React.FC<AddCommitteeMemberModalProps> = ({
     { userid: 0, postid: 0, electionid: electionId },
   ]);
   const [loading, startTransition] = useTransition();
-
-
 
   const handleSelectChange = (
     selectedOption: any,
@@ -109,7 +77,6 @@ const AddCommitteeMemberModal: React.FC<AddCommitteeMemberModalProps> = ({
         }
         toast.success('Committee Members added successfully.');
         onClose();
-        fetchMembers();
       } catch (error) {
         console.error('Error adding members:', error);
         toast.error('Failed to add members.');

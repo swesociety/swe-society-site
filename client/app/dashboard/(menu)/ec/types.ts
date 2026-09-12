@@ -99,3 +99,59 @@ export interface ElectionFormInput {
   election_end?: string | Date;
 }
 
+export interface UserResponse {
+  userid: number;
+  regno: string;
+  fullname: string;
+}
+
+export interface PostResponse {
+  committeepostid: number;
+  post_name: string;
+}
+
+export interface MappedUser {
+  id?: number;
+  value: number;
+  label: string;
+}
+
+export interface MappedPost {
+  value: number;
+  label: string;
+}
+
+export interface MemberFormData {
+  userid: number;
+  postid: number;
+  electionid: number;
+}
+
+export interface AddCommitteeMemberModalProps {
+  electionId: number;
+  onClose: () => void;
+  fetchMembers?: () => void;
+  users?: UserResponse[];
+  posts?: PostResponse[];
+}
+
+export interface NominationMember {
+  userid: number;
+  year: string;
+  fullname: string;
+  profile_picture: string | null;
+  email: string;
+  regno: string;
+  session: string;
+  committee_post: string;
+}
+
+export interface ManualNominationInput {
+  electionid: number;
+  userId: number;
+  marka_name: string;
+  slogan: string;
+  logo_url: string;
+  committeepostid: number;
+  request_approval_status: boolean;
+}

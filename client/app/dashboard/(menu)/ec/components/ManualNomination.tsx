@@ -1,10 +1,7 @@
 import { getJWT } from '@/data/cookies/getCookies';
-import { APIENDPOINTS } from '@/data/urls';
-import { encryptObject, reqSalt_keys } from '@/utils/encrypt_req';
-import { uploadImageToCloud } from '@/utils/ImageUploadService'; // Assuming this returns a Promise<string>
-import axios from 'axios';
+import { uploadImageToCloud } from '@/utils/ImageUploadService';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import Select from 'react-select';
 import {
   Dialog,
@@ -15,25 +12,9 @@ import {
   DialogTrigger,
 } from '../../../../../components/ui/dialog';
 import { toast } from '../../../../../components/ui/use-toast';
+import { createManualNomination, getAllPositions, getUsers } from '../actions';
+import type { NominationMember, MappedPost } from '../types';
 
-interface Member {
-  userid: number;
-  year: string;
-  fullname: string;
-  profile_picture: string | null;
-  email: string;
-  regno: string;
-  session: string;
-  committee_post: string;
-}
-interface PostResponse {
-  committeepostid: number;
-  post_name: string;
-}
-interface MappedPost {
-  value: number;
-  label: string;
-}
 interface ManualNominationProps {
   electionId: number;
   users?: any[];
@@ -45,11 +26,11 @@ function ManualNomination({
   users: usersProp,
   posts: postsProp,
 }: ManualNominationProps) {
-  const [members, setMembers] = useState<Member[]>([]);
-  const [disabled, setDisabled] = useState(false);
+  const [members, setMembers] = useState<NominationMember[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [postList, setPostList] = useState<MappedPost[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false); // State to control dialog open/close
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (usersProp && usersProp.length > 0 && postsProp && postsProp.length > 0) {
@@ -65,16 +46,18 @@ function ManualNomination({
 
     const fetchMembers = async () => {
       try {
-        const usersRes = await axios.get(`${APIENDPOINTS.users.getAllUsers}`);
-        setMembers(usersRes.data);
+        const [usersData, postsData] = await Promise.all([
+          getUsers(),
+          getAllPositions(),
+        ]);
 
-        const postsRes = await axios.get(APIENDPOINTS.election.getAllPosition);
-        const posts: PostResponse[] = postsRes.data;
-        const mappedPosts = posts.map((post) => ({
-          value: post.committeepostid,
-          label: post.post_name,
-        }));
-        setPostList(mappedPosts);
+        setMembers(usersData as NominationMember[]);
+        setPostList(
+          postsData.map((post) => ({
+            value: post.committeepostid,
+            label: post.post_name,
+          })),
+        );
       } catch (error) {
         console.error('Error fetching members or posts:', error);
         toast({
@@ -87,21 +70,20 @@ function ManualNomination({
     };
 
     fetchMembers();
-  }, [usersProp, postsProp]); // Empty dependency array means this runs once on mount
+  }, [usersProp, postsProp]);
 
   const [formData, setFormData] = useState({
     electionId: electionId,
     userid: 0,
     marka_name: '',
     slogan: '',
-    logo_url: '', // This will be set after image upload
+    logo_url: '',
     committeepostid: -1,
-    request_approval_status: false, // Changed to boolean
+    request_approval_status: false,
   });
 
   // Function to reset form state
   const clearform = () => {
-    setDisabled(false);
     setFormData({
       electionId: electionId,
       userid: 0,
@@ -118,7 +100,6 @@ function ManualNomination({
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      // If the dialog is closing
       clearform();
     }
   };
@@ -133,23 +114,19 @@ function ManualNomination({
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
     } else {
-      setFile(null); // Clear file if nothing is selected
+      setFile(null);
     }
   };
 
   const handleSelectChange = (selectedOption: any) => {
     setFormData({
       ...formData,
-      committeepostid: selectedOption ? selectedOption.value : -1, // Set to -1 if no option is selected
+      committeepostid: selectedOption ? selectedOption.value : -1,
     });
   };
 
-  // Changed to handle form onSubmit event
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // Prevent default form submission behavior
-    setDisabled(true);
-
-    console.log('Form Data before submission:', formData);
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
     // Frontend validation
     if (
@@ -165,65 +142,48 @@ function ManualNomination({
         variant: 'destructive',
         duration: 3000,
       });
-      setDisabled(false);
       return;
     }
 
-    try {
-      // Await the image upload
-      const logourl = await uploadImageToCloud(file!);
+    startTransition(async () => {
+      try {
+        // Upload image first, then call server action
+        const logourl = await uploadImageToCloud(file!);
 
-      const final_formData = {
-        electionid: formData.electionId,
-        userId: formData.userid,
-        marka_name: formData.marka_name,
-        slogan: formData.slogan,
-        logo_url: logourl, // Use the awaited URL
-        committeepostid: formData.committeepostid,
-        request_approval_status: formData.request_approval_status, // Use the boolean value
-      };
+        const response = await createManualNomination(
+          {
+            electionid: formData.electionId,
+            userId: formData.userid,
+            marka_name: formData.marka_name,
+            slogan: formData.slogan,
+            logo_url: logourl,
+            committeepostid: formData.committeepostid,
+            request_approval_status: formData.request_approval_status,
+          },
+          getJWT() || '',
+        );
 
-      const encryptedData = encryptObject(
-        final_formData,
-        reqSalt_keys.candidate.createcandidate,
-      );
-
-      const res = await axios.post(
-        APIENDPOINTS.candidate.createNomination,
-        encryptedData,
-        { headers: { Authorization: `Bearer ${getJWT()}` } },
-      );
-
-      // Only 2xx status codes reach here for a successful response
-      if (res.status === 201) {
-        toast({
-          title: 'Success',
-          description: 'Your nomination has been submitted.',
-          duration: 3000,
-        });
-        // clearform is now called by handleDialogOpenChange when dialog closes
-        setIsDialogOpen(false); // Close dialog on success
-      }
-    } catch (error: any) {
-      // Type 'error' as 'any' or 'AxiosError' for better error handling
-      console.error('Error submitting nomination:', error);
-
-      if (axios.isAxiosError(error) && error.response) {
-        // Handle specific API error responses
-        if (error.response.status === 409) {
+        if (response.status === 201 || response.status === 200) {
+          toast({
+            title: 'Success',
+            description: 'Nomination has been submitted successfully.',
+            duration: 3000,
+          });
+          setIsDialogOpen(false); // clearform called by handleDialogOpenChange
+        } else if (response.status === 409) {
           toast({
             title: 'Already registered',
             description:
-              error.response.data.message ||
-              'You have already submitted a nomination for this election.',
+              (response.data as any)?.message ||
+              'A nomination for this user already exists in this election.',
             variant: 'destructive',
             duration: 3000,
           });
-        } else if (error.response.status === 400) {
+        } else if (response.status === 400) {
           toast({
             title: 'Invalid Input',
             description:
-              error.response.data.message ||
+              (response.data as any)?.message ||
               'Invalid user or election information. Please check your inputs.',
             variant: 'destructive',
             duration: 3000,
@@ -232,14 +192,14 @@ function ManualNomination({
           toast({
             title: 'Submission Failed',
             description:
-              error.response.data.message ||
+              (response.data as any)?.message ||
               'An unexpected error occurred. Please try again.',
             variant: 'destructive',
             duration: 3000,
           });
         }
-      } else {
-        // Handle network errors or other unexpected errors
+      } catch (error: any) {
+        console.error('Error submitting nomination:', error);
         toast({
           title: 'Submission Failed',
           description:
@@ -248,9 +208,7 @@ function ManualNomination({
           duration: 3000,
         });
       }
-    } finally {
-      setDisabled(false); // Re-enable button regardless of success or failure
-    }
+    });
   };
 
   return (
@@ -265,7 +223,6 @@ function ManualNomination({
           <DialogTitle>Manual Nomination Submission</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col flex-grow">
-          {/* Added flex-shrink-0 to prevent header/footer from shrinking unnecessarily */}
           <div className="grid gap-4 overflow-y-auto pr-2 flex-grow min-h-0">
             <div className="w-full gap-2 grid grid-cols-1 md:grid-cols-2 bg-gray-700 rounded-md">
               <div className="space-y-2 w-full p-2">
@@ -361,12 +318,12 @@ function ManualNomination({
             <div className="flex w-full justify-end mt-4">
               <button
                 type="submit"
-                disabled={disabled}
+                disabled={isPending}
                 className={`bg-red-600 text-white rounded px-4 py-2 ${
-                  disabled ? 'opacity-50 cursor-not-allowed' : ''
+                  isPending ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                Submit
+                {isPending ? 'Submitting...' : 'Submit'}
               </button>
             </div>
           </DialogFooter>

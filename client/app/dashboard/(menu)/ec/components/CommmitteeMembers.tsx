@@ -1,24 +1,16 @@
 'use client';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { getJWT, getUserRole } from '@/data/cookies/getCookies';
-import { APIENDPOINTS, BACKENDURL } from '@/data/urls';
-import axios from 'axios';
-import { useRouter } from 'next/navigation';
-
-import {
-  decryptObject,
-  election_status,
-  reqSalt_keys,
-  xorEncrypt,
-} from '@/utils/encrypt_req';
+import { getJWT } from '@/data/cookies/getCookies';
+import { election_status } from '@/utils/encrypt_req';
 import { encryptId } from '@/utils/encryption';
 import { useProfile } from '@/hooks/useProfile';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useTransition } from 'react';
 import { BsCopy } from 'react-icons/bs';
 import { MdOutlineArrowBackIos } from 'react-icons/md';
 import { TiTick } from 'react-icons/ti';
@@ -27,6 +19,12 @@ import { useToast } from '../../../../../components/ui/use-toast';
 import AddCommitteeMemberModal from './AddCommitteeMemberModal';
 import EligibleCandidate from './EligibleCandidate';
 import ManualNomination from './ManualNomination';
+import {
+  deleteCommitteeMember,
+  getElectionById,
+  getElectionMembers,
+  updateElectionStatus,
+} from '../actions';
 
 interface Member {
   userid: number;
@@ -44,8 +42,9 @@ interface ElectionMemberDetailsProps {
   setShowFullCommitteee: React.Dispatch<React.SetStateAction<boolean>>;
   users?: { userid: number; fullname: string; regno: string }[];
   posts?: { committeepostid: number; post_name: string }[];
+  members?: Member[];
+  initialElectionStatus?: string;
 }
-
 
 const electionStatusButtons = [
   {
@@ -78,53 +77,63 @@ const electionStatusButtons = [
   },
 ];
 
+const mapStatusToTitle = (status?: string) => {
+  switch (status) {
+    case election_status.pending:
+      return 'Pending';
+    case election_status.candidate_reg_start:
+      return 'Nomination Start';
+    case election_status.candidate_reg_end:
+      return 'Nomination End';
+    case election_status.voting_not_started:
+      return 'Voting Not Started';
+    case election_status.voting_start:
+      return 'Voting Start';
+    case election_status.voting_end:
+      return 'Voting End';
+    case election_status.finished:
+      return 'Finished';
+    default:
+      return status ? `state : ${status}` : 'Set Election state';
+  }
+};
+
 const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
   electionId,
   setShowFullCommitteee,
   users,
   posts,
+  members,
+  initialElectionStatus,
 }) => {
-  const [election_state, setElection_state] =
-    useState<string>('Set Election state');
-  const [members, setMembers] = useState<Member[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [selectedCommitteeMember, setSelectedCommitteMember] =
-    useState<number>(0);
+  const [election_state, setElection_state] = useState<string>(() =>
+    mapStatusToTitle(initialElectionStatus),
+  );
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [nominationLink, setNominationLink] = useState('');
-  const [role, setRole] = useState<string>('');
-  const router = useRouter();
   const [nomination_btn, setNomination_btn] = useState('Nomination Form Link');
+  const [loading, startTransition] = useTransition();
 
-  const fetchMembers = async () => {
-    try {
-      const response = await axios.get(
-        `${APIENDPOINTS.election.getAllMembers}/${xorEncrypt(
-          electionId.toString(),
-          reqSalt_keys.election.getAllMembers,
-        )}`,
-      );
-      setMembers(response.data);
-    } catch (error) {
-      console.error('Error fetching members:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handle_election_state = async (title: string, state: string) => {
+  const handle_election_state = (title: string, state: string) => {
     setElection_state(title);
-    await axios.put(
-      `${APIENDPOINTS.election.updateElection}/${electionId}`,
-      {
-        election_status: state,
-      },
-      { headers: { Authorization: `Bearer ${getJWT()}` } },
-    );
+    startTransition(async () => {
+      await updateElectionStatus(electionId, state, getJWT() || '');
+    });
   };
-
+  const fetchMembers = async () => {
+    startTransition(async () => {
+      try {
+        const decryptedData = await getElectionMembers(electionId);
+        if (!decryptedData) return;
+        console.log('Decrypted Data:', decryptedData.election_status);
+        setElection_state(mapStatusToTitle(decryptedData.election_status));
+      } catch (error) {
+        console.error('Error fetching election info:', error);
+      }
+    });
+  };
   const getNominationLink = () => {
     if (typeof window !== 'undefined') {
       setNominationLink(
@@ -152,59 +161,26 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
     }
   };
   const fetchElectionInfo = () => {
-    axios
-      .get(
-        `${APIENDPOINTS.election.getElectionbyID}/${xorEncrypt(
-          electionId.toString(),
-          reqSalt_keys.election.getElectionbyID,
-        )}`,
-      )
-      .then((response) => {
-        const decryptedData = decryptObject(
-          response.data,
-          reqSalt_keys.election.getElectionbyID,
-        );
+    startTransition(async () => {
+      try {
+        const decryptedData = await getElectionById(electionId);
+        if (!decryptedData) return;
         console.log('Decrypted Data:', decryptedData.election_status);
-        switch (decryptedData.election_status) {
-          case election_status.pending:
-            setElection_state('Pending');
-            break;
-          case election_status.candidate_reg_start:
-            setElection_state('Nomination Start');
-            break;
-          case election_status.candidate_reg_end:
-            setElection_state('Nomination End');
-            break;
-          case election_status.voting_not_started:
-            setElection_state('Voting Not Started');
-            break;
-          case election_status.voting_start:
-            setElection_state('Voting Start');
-            break;
-          case election_status.voting_end:
-            setElection_state('Voting End');
-            break;
-          case election_status.finished:
-            setElection_state('Finished');
-            break;
-
-          default:
-            setElection_state('Unknown State');
-            break;
-        }
-      })
-      .catch((error) => {
+        setElection_state(mapStatusToTitle(decryptedData.election_status));
+      } catch (error) {
         console.error('Error fetching election info:', error);
-      });
+      }
+    });
   };
 
   const { hasStandingsAccess } = useProfile();
 
   useEffect(() => {
-    fetchElectionInfo();
+    if (!initialElectionStatus) {
+      fetchElectionInfo();
+    }
     fetchMembers();
     getNominationLink();
-    setRole(getUserRole() || '');
   }, [electionId]);
 
   if (loading) {
@@ -213,29 +189,21 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
     );
   }
 
-  const handleDeleteConfirm = async () => {
-    try {
-      const response = await axios.delete(
-        `${BACKENDURL}election/members/${selectedCommitteeMember}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getJWT()}`,
-          },
-        },
-      );
-      if (response.status === 200 || response.status === 201) {
-        toast({
-          title: 'Deleted Election Successfully',
-          duration: 3000,
-        });
-        setOpenDeleteModal(false);
-        fetchMembers();
-
-        // window.location.reload();
+  const handleDeleteConfirm = () => {
+    startTransition(async () => {
+      try {
+        const response = await deleteCommitteeMember(0, getJWT() || '');
+        if (response.status === 200 || response.status === 201) {
+          toast({
+            title: 'Deleted Election Successfully',
+            duration: 3000,
+          });
+          setOpenDeleteModal(false);
+        }
+      } catch (error) {
+        console.error('Error deleting election member:', error);
       }
-    } catch (error) {
-      console.error('Error creating election:', error);
-    }
+    });
   };
 
   return (
@@ -299,7 +267,11 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
             Monitor election voting
           </button>
 
-          <ManualNomination electionId={electionId} users={users} posts={posts} />
+          <ManualNomination
+            electionId={electionId}
+            users={users}
+            posts={posts}
+          />
 
           <button
             onClick={handleCopy}
@@ -366,7 +338,7 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-        {members.map((member) => (
+        {members?.map((member) => (
           <div
             key={member.regno}
             className="bg-gray-700 text-white p-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow relative"
@@ -422,7 +394,6 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
         <AddCommitteeMemberModal
           electionId={electionId}
           onClose={() => setIsModalOpen(false)}
-          fetchMembers={fetchMembers}
           users={users}
           posts={posts}
         />

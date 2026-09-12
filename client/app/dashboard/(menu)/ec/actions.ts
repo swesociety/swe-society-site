@@ -1,7 +1,7 @@
 'use server';
 
 import { APIENDPOINTS, BACKENDURL } from '@/data/urls';
-import { decryptArray, encryptObject, reqSalt_keys } from '@/utils/encrypt_req';
+import { decryptArray, decryptObject, encryptObject, reqSalt_keys, xorEncrypt } from '@/utils/encrypt_req';
 import axios from 'axios';
 import { getAxiosErrorResult } from '@/lib/axiosError';
 import type {
@@ -14,7 +14,9 @@ import type {
   ElectionCommitteeListResponse,
   ElectionFormInput,
   ExecutiveCommittee,
+  ManualNominationInput,
 } from './types';
+
 
 export type * from './types';
 
@@ -80,6 +82,60 @@ export const updateElection = async (
     return { status: response.status, data: response.data };
   } catch (error) {
     console.error('Error updating election:', error);
+    return getAxiosErrorResult(error);
+  }
+};
+
+export const getElectionMembers = async (electionId: number) => {
+  try {
+    const encryptedId = xorEncrypt(
+      electionId.toString(),
+      reqSalt_keys.election.getAllMembers,
+    );
+    const response = await axios.get(
+      `${APIENDPOINTS.election.getAllMembers}/${encryptedId}`,
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching election members:', error);
+    return [];
+  }
+};
+
+export const getElectionById = async (electionId: number) => {
+  try {
+    const encryptedId = xorEncrypt(
+      electionId.toString(),
+      reqSalt_keys.election.getElectionbyID,
+    );
+    const response = await axios.get(
+      `${APIENDPOINTS.election.getElectionbyID}/${encryptedId}`,
+    );
+    const decryptedData = decryptObject(
+      response.data,
+      reqSalt_keys.election.getElectionbyID,
+    );
+    return decryptedData;
+  } catch (error) {
+    console.error('Error fetching election info:', error);
+    return null;
+  }
+};
+
+export const updateElectionStatus = async (
+  electionId: number,
+  status: string,
+  token: string,
+) => {
+  try {
+    const response = await axios.put(
+      `${APIENDPOINTS.election.updateElection}/${electionId}`,
+      { election_status: status },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    return { status: response.status, data: response.data };
+  } catch (error) {
+    console.error('Error updating election status:', error);
     return getAxiosErrorResult(error);
   }
 };
@@ -305,7 +361,29 @@ export const deleteExecutiveCommittee = async (
 };
 
 // ---------------------------------------------------------------------------
-// Users (for dropdowns)
+// Nominations / Candidates
+// ---------------------------------------------------------------------------
+
+export const createManualNomination = async (
+  input: ManualNominationInput,
+  token: string,
+) => {
+  try {
+    const encrypted = encryptObject(input, reqSalt_keys.candidate.createcandidate);
+    const response = await axios.post(
+      APIENDPOINTS.candidate.createNomination,
+      encrypted,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    return { status: response.status, data: response.data };
+  } catch (error) {
+    console.error('Error creating manual nomination:', error);
+    return getAxiosErrorResult(error);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Users & Positions (for dropdowns)
 // ---------------------------------------------------------------------------
 
 export const getUsers = async (): Promise<CommitteeUser[]> => {
@@ -315,6 +393,17 @@ export const getUsers = async (): Promise<CommitteeUser[]> => {
     return (await response.json()) as CommitteeUser[];
   } catch (error) {
     console.error('Error fetching users:', error);
+    return [];
+  }
+};
+
+export const getAllPositions = async (): Promise<CommitteePost[]> => {
+  try {
+    const response = await fetch(APIENDPOINTS.election.getAllPosition);
+    if (!response.ok) throw new Error('Failed to fetch positions');
+    return (await response.json()) as CommitteePost[];
+  } catch (error) {
+    console.error('Error fetching positions:', error);
     return [];
   }
 };
