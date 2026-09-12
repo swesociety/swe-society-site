@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import {
   Card,
   CardContent,
@@ -6,8 +6,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+} from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -15,21 +15,21 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
-import { setLoginCookies } from "@/data/cookies/setCookies";
-import { APIENDPOINTS } from "@/data/urls";
-import { zodResolver } from "@hookform/resolvers/zod";
-import axios from "axios";
-import { Loader2 } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { useProfile } from "@/hooks/useProfile";
-import { Button } from "../ui/button";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
+import { setLoginCookies } from '@/data/cookies/setCookies';
+import { APIENDPOINTS } from '@/data/urls';
+import { zodResolver } from '@hookform/resolvers/zod';
+import axios from 'axios';
+import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { useProfile } from '@/hooks/useProfile';
+import { Button } from '../ui/button';
 
 const formSchema = z.object({
   regno: z.string().length(10),
@@ -45,8 +45,8 @@ export function SignInCard() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      regno: "",
-      password: "",
+      regno: '',
+      password: '',
       longsession: false,
     },
   });
@@ -61,7 +61,7 @@ export function SignInCard() {
       });
       if (response.status === 200) {
         toast({
-          title: "Logged in successfully",
+          title: 'Logged in successfully',
           description: `${response.data.user.fullname} welcome to SWE Society`,
         });
         const expirationTime = values.longsession ? 30 : 1 / 24;
@@ -73,30 +73,35 @@ export function SignInCard() {
           response.data.user.profile_picture,
           response.data.user.regno,
           response.data.user.userid,
-          response.data.user.role
+          response.data.user.role,
         );
 
         login(response.data.user, response.data.token);
 
         // Check if redirect query parameter exists and is valid
-        const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-        const redirectUrl = searchParams?.get("redirect");
+        const searchParams =
+          typeof window !== 'undefined'
+            ? new URLSearchParams(window.location.search)
+            : null;
+        const redirectUrl = searchParams?.get('redirect');
 
-        if (redirectUrl && redirectUrl.startsWith("/")) {
+        if (redirectUrl && redirectUrl.startsWith('/')) {
           router.push(redirectUrl);
         } else {
-          router.push("/dashboard/profile");
+          router.push('/dashboard/profile');
         }
       }
     } catch (error: any) {
       const status = error?.response?.status;
-      const message = error?.response?.data?.message || "Invalid registration number or password";
+      const message =
+        error?.response?.data?.message ||
+        'Invalid registration number or password';
       const details = error?.response?.data?.details;
 
       toast({
         title: message,
         description: details,
-        variant: status === 500 ? "destructive" : "default",
+        variant: status === 500 ? 'destructive' : 'default',
       });
     }
     setFetching(false);
@@ -163,7 +168,7 @@ export function SignInCard() {
               )}
             />
             <Button type="submit" className="w-full" disabled={fetching}>
-              {fetching ? <Loader2 className="animate-spin" /> : "Sign in"}
+              {fetching ? <Loader2 className="animate-spin" /> : 'Sign in'}
             </Button>
           </form>
         </Form>
@@ -175,12 +180,12 @@ export function SignInCard() {
         >
           Forgot your password?
         </Link>
-        <p className="text-sm text-muted-foreground">
+        {/* <p className="text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
           <Link href="/signup" className="underline">
             Sign up
           </Link>
-        </p>
+        </p> */}
       </CardFooter>
     </Card>
   );
