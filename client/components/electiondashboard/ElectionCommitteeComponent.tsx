@@ -1,14 +1,14 @@
-"use client";
-import { getJWT, getUserRole } from "@/data/cookies/getCookies";
-import { APIENDPOINTS } from "@/data/urls";
-import { reqSalt_keys, xorEncrypt } from "@/utils/encrypt_req";
-import React, { useState, useTransition } from "react";
-import { MdDelete, MdModeEditOutline } from "react-icons/md";
-import ConfirmationModal from "../commons/ConfirmationModal";
-import { useToast } from "../ui/use-toast";
-import ElectionModal from "./ElectionEditModal";
-import { formatDateDDMMYYYY } from "./functions";
-import { deleteElection } from "@/app/dashboard/(menu)/ec/actions";
+'use client';
+import { getJWT, getUserRole } from '@/data/cookies/getCookies';
+import { APIENDPOINTS } from '@/data/urls';
+import { reqSalt_keys, xorEncrypt } from '@/utils/encrypt_req';
+import React, { useState, useTransition } from 'react';
+import { MdDelete, MdModeEditOutline } from 'react-icons/md';
+import ConfirmationModal from '../commons/ConfirmationModal';
+import { useToast } from '../ui/use-toast';
+import ElectionModal from './ElectionEditModal';
+import { formatDateDDMMYYYY } from './functions';
+import { deleteElection } from '@/app/dashboard/(menu)/ec/actions';
 
 export interface ElectionCommitteeItem {
   electionid: number;
@@ -44,7 +44,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
   setSelectedElectionId,
   fetchData,
 }) => {
-  const [role, setRole] = useState<string>(getUserRole() || "general_member");
+  const [role, setRole] = useState<string>(getUserRole() || 'general_member');
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [openEditingModal, setOpenEditModal] = useState<boolean>(false);
   const [editElectionId, setEditElectionId] = useState<number>(-1);
@@ -68,7 +68,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
         }
 
         toast({
-          title: response.data?.message || "Election deleted successfully",
+          title: response.data?.message || 'Election deleted successfully',
           duration: 3000,
         });
 
@@ -76,10 +76,10 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
         fetchData();
       } catch (error) {
         toast({
-          title: "Error deleting election",
+          title: 'Error deleting election',
           description: 'Unable to delete election.',
           duration: 5000,
-          variant: "destructive",
+          variant: 'destructive',
         });
         setOpenDeleteModal(false);
       }
@@ -87,8 +87,8 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
   };
 
   const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-GB");
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-GB');
   };
 
   return (
@@ -136,7 +136,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
               </div>
 
               <p className="font-bold">
-                {election.election_type || ""} Election {election.year || ""}
+                {election.election_type || ''} Election {election.year || ''}
               </p>
               {election.batch && (
                 <p>
@@ -144,11 +144,11 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
                 </p>
               )}
               <p>
-                <span className="font-medium">Registration Deadline:</span>{" "}
+                <span className="font-medium">Registration Deadline:</span>{' '}
                 {formatDateDDMMYYYY(election.candidatereg_end)}
               </p>
               <p>
-                <span className="font-medium">Election Date:</span>{" "}
+                <span className="font-medium">Election Date:</span>{' '}
                 {formatDateDDMMYYYY(election.election_end)}
               </p>
             </div>
@@ -158,7 +158,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
                 <img
                   src={
                     election.commissioner_profile_picture ||
-                    "/default-profile.png"
+                    '/default-profile.png'
                   }
                   alt="Commissioner"
                   className="w-12 h-12 rounded-full border border-gray-300"
@@ -171,7 +171,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
                     {election.commissioner_fullname}
                   </h3>
                   <p className="text-red-300 text-sm">
-                    {election.commissioner_email || "No email provided"}
+                    {election.commissioner_email || 'No email provided'}
                   </p>
                 </div>
               </div>
@@ -181,7 +181,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
               <div className="mt-4 flex items-center space-x-4">
                 <img
                   src={
-                    election.assistant_profile_picture || "/default-profile.png"
+                    election.assistant_profile_picture || '/default-profile.png'
                   }
                   alt="Assistant"
                   className="w-12 h-12 rounded-full border border-gray-300"
@@ -194,7 +194,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
                     {election.assistant_fullname}
                   </h3>
                   <p className="text-red-300 text-sm">
-                    {election.assistant_email || "No email provided"}
+                    {election.assistant_email || 'No email provided'}
                   </p>
                 </div>
               </div>
