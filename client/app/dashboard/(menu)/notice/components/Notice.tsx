@@ -1,12 +1,14 @@
 'use client';
 
-import AddNotice from '@/components/dashboardpage/notice/AddNotice';
+import AddNotice from '@/app/dashboard/(menu)/notice/components/AddNotice';
 import Notice_Card from '@/components/dashboardpage/notice/notice_card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { APIENDPOINTS } from '@/data/urls';
-import React, { useState } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import { getJWT } from '@/data/cookies/getCookies';
+import React, { useTransition, useState } from 'react';
 import type { Notice } from '../types';
+import { fetchAllNotices, deleteNoticeById } from '../actions';
 
 type Props = {
   initialNotices: Notice[];
@@ -17,10 +19,38 @@ const NoticeComponent: React.FC<Props> = ({ initialNotices }) => {
   const [onlyMyNotices, setOnlyMyNotices] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  const { toast } = useToast();
+
+  const [loadingFetch, startFetchTransition] = useTransition();
+  const [loadingDelete, startDeleteTransition] = useTransition();
+
   const fetch_notices = () => {
-    fetch(APIENDPOINTS.notice.getAllNotice)
-      .then((res) => res.json())
-      .then((data: Notice[]) => setNotices(data));
+    startFetchTransition(async () => {
+      const response = await fetchAllNotices(getJWT() || '');
+      if (response?.status === 200 || response?.status === 201) {
+        setNotices(response.data as Notice[]);
+      } else {
+        console.error('Failed to refresh notices');
+      }
+    });
+  };
+
+  const handle_dlt = (noticeid: number) => {
+    startDeleteTransition(async () => {
+      const response = await deleteNoticeById(noticeid, getJWT() || '');
+      if (response?.status === 200 || response?.status === 204) {
+        setNotices((prev) =>
+          prev.filter((notice) => notice.noticeid !== noticeid),
+        );
+        toast({ title: 'Notice deleted successfully.', duration: 3000 });
+      } else {
+        toast({
+          title: 'Failed to delete notice.',
+          variant: 'destructive',
+          duration: 3000,
+        });
+      }
+    });
   };
 
   const filteredNotices = notices.filter(
@@ -29,19 +59,7 @@ const NoticeComponent: React.FC<Props> = ({ initialNotices }) => {
       notice.notice_body.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const handle_dlt = (noticeid: number) => {
-    fetch(`${APIENDPOINTS.notice.delNoticebyID}/${noticeid}`, {
-      method: 'DELETE',
-    })
-      .then(() => {
-        setNotices((prevNotices) =>
-          prevNotices.filter((notice) => notice.noticeid !== noticeid),
-        );
-      })
-      .catch((err) => {
-        console.error('Error deleting notice:', err);
-      });
-  };
+  const isBusy = loadingFetch || loadingDelete;
 
   return (
     <div className="flex flex-col items-center justify-start gap-4 space-y-2 pt-16 px-4 h-screen">
@@ -77,6 +95,7 @@ const NoticeComponent: React.FC<Props> = ({ initialNotices }) => {
                 notice={noticeCardData}
                 handle_dlt={handle_dlt}
                 fetch_notices={fetch_notices}
+                loading={isBusy}
               />
             );
           })

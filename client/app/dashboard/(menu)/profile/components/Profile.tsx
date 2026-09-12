@@ -19,16 +19,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { getUserReg } from "@/data/cookies/getCookies";
-import { APIENDPOINTS } from "@/data/urls";
+import { getJWT, getUserReg } from "@/data/cookies/getCookies";
 import { useProfile } from "@/hooks/useProfile";
-import { headerConfig } from "@/lib/header_config";
 import { zodResolver } from "@hookform/resolvers/zod";
-import axios, { AxiosError } from "axios";
 import { KeyRound, PencilLine } from "lucide-react";
-import React, { useState } from "react";
+import React, { useTransition, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { changePassword } from "../actions";
 
 const formSchema = z
   .object({
@@ -43,16 +41,13 @@ const formSchema = z
 
 type PasswordFormValues = z.infer<typeof formSchema>;
 
-interface ChangePasswordErrorResponse {
-  message?: string;
-  details?: string;
-}
-
 const Profile: React.FC = () => {
   const [updating, setUpdating] = useState<boolean>(false);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-  const { profile, loading, refreshProfile } = useProfile();
+  const [loading, startTransition] = useTransition();
+  const { profile, loading: profileLoading, refreshProfile } = useProfile();
   const { toast } = useToast();
+
   const form = useForm<PasswordFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -62,45 +57,39 @@ const Profile: React.FC = () => {
     },
   });
 
-  async function onSubmit(values: PasswordFormValues) {
-    try {
-      const reqbody = {
-        regno: getUserReg(),
-        oldpass: values.oldpass,
-        newpass: values.newpass,
-      };
-      const response = await axios.put(
-        APIENDPOINTS.auth.changePassword,
-        reqbody,
-        headerConfig()
+  function onSubmit(values: PasswordFormValues) {
+    startTransition(async () => {
+      const response = await changePassword(
+        {
+          regno: getUserReg() || "",
+          oldpass: values.oldpass,
+          newpass: values.newpass,
+        },
+        getJWT() || "",
       );
-      if (response.status === 200) {
+
+      if (response?.status === 200 || response?.status === 201) {
         toast({
           title: "Password Changed Successfully",
           duration: 3000,
         });
         setDialogOpen(false);
         form.reset();
-      }
-    } catch (err) {
-      const error = err as AxiosError<ChangePasswordErrorResponse>;
-      console.log(error);
-      if (error?.response?.status === 404) {
+      } else if (response?.status === 404) {
         toast({
           title: "Invalid user information",
           description: "Login again to change password",
           variant: "destructive",
           duration: 3000,
         });
-      } else if (error?.response?.status === 500) {
+      } else {
         toast({
-          title: error?.response?.data?.message || "Server Error",
-          description: error?.response?.data?.details,
+          title: "Failed to change password",
           variant: "destructive",
           duration: 3000,
         });
       }
-    }
+    });
   }
 
   function onCancel() {
@@ -108,7 +97,7 @@ const Profile: React.FC = () => {
     form.reset();
   }
 
-  if (loading) {
+  if (profileLoading) {
     return (
       <div className="flex flex-col items-center justify-center space-y-2 pt-16 h-screen p-4 text-muted-foreground">
         Loading profile...
@@ -200,10 +189,13 @@ const Profile: React.FC = () => {
                         variant={"ghost"}
                         type="button"
                         onClick={onCancel}
+                        disabled={loading}
                       >
                         Cancel
                       </Button>
-                      <Button type="submit">Submit</Button>
+                      <Button type="submit" disabled={loading}>
+                        {loading ? "Submitting..." : "Submit"}
+                      </Button>
                     </div>
                   </form>
                 </Form>

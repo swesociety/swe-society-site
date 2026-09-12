@@ -7,10 +7,9 @@ import FullBlogCard from '@/components/blogdashboard/BlogComp/FullBlog';
 import ConfirmationModal from '@/components/commons/ConfirmationModal';
 import { useToast } from '@/components/ui/use-toast';
 import { getJWT, getUserID } from '@/data/cookies/getCookies';
-import { BACKENDURL } from '@/data/urls';
-import axios from 'axios';
-import React, { useState } from 'react';
+import React, { useTransition, useState } from 'react';
 import type { Blog, BlogFormData } from '@/app/dashboard/(menu)/blog/types';
+import { fetchUserBlogs, deleteBlogById } from '../actions';
 
 type Props = {
   initialBlogs: Blog[];
@@ -26,15 +25,39 @@ const UsersBlog: React.FC<Props> = ({ initialBlogs }) => {
 
   const { toast } = useToast();
 
-  const fetchBlogs = async () => {
-    try {
-      const userId = getUserID();
-      const response = await fetch(`${BACKENDURL}blog/userblog/${userId}`);
-      const data = (await response.json()) as Blog[];
-      setBlogs(data);
-    } catch (error) {
-      console.error('Error fetching blogs:', error);
-    }
+  const [loadingFetch, startFetchTransition] = useTransition();
+  const [loadingDelete, startDeleteTransition] = useTransition();
+
+  const fetchBlogs = () => {
+    startFetchTransition(async () => {
+      const response = await fetchUserBlogs(
+        getUserID() || '',
+        getJWT() || '',
+      );
+      if (response?.status === 200 || response?.status === 201) {
+        setBlogs(response.data as Blog[]);
+      } else {
+        console.error('Failed to refresh blogs');
+      }
+    });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (selecteBlogId === null) return;
+    startDeleteTransition(async () => {
+      const response = await deleteBlogById(selecteBlogId, getJWT() || '');
+      if (response?.status === 200 || response?.status === 201) {
+        toast({ title: 'Deleted Blog Successfully', duration: 3000 });
+        setOpenDeleteModal(false);
+        fetchBlogs();
+      } else {
+        toast({
+          title: 'Failed to delete blog',
+          variant: 'destructive',
+          duration: 3000,
+        });
+      }
+    });
   };
 
   const selectedBlog: BlogFormData = (() => {
@@ -82,23 +105,7 @@ const UsersBlog: React.FC<Props> = ({ initialBlogs }) => {
     fullname: null,
   };
 
-  const handleDeleteConfirm = async () => {
-    try {
-      const response = await axios.delete(
-        `${BACKENDURL}blog/${selecteBlogId}`,
-        {
-          headers: { Authorization: `Bearer ${getJWT()}` },
-        },
-      );
-      if (response.status === 200 || response.status === 201) {
-        toast({ title: 'Deleted Blog Successfully', duration: 3000 });
-        setOpenDeleteModal(false);
-        fetchBlogs();
-      }
-    } catch (error) {
-      console.error('Error deleting blog:', error);
-    }
-  };
+  const isBusy = loadingFetch || loadingDelete;
 
   return (
     <div className="flex flex-col items-center space-y-2 py-16 mb-16">
@@ -111,6 +118,7 @@ const UsersBlog: React.FC<Props> = ({ initialBlogs }) => {
             <button
               onClick={() => setIsModalOpen(true)}
               className="bg-red-700 rounded-lg px-4 mr-2"
+              disabled={isBusy}
             >
               + Add Blog
             </button>
@@ -158,7 +166,7 @@ const UsersBlog: React.FC<Props> = ({ initialBlogs }) => {
         <ConfirmationModal
           title="Confirm Deletion"
           subtitle="Are you sure you want to delete the Blog? This action cannot be undone."
-          confirmButtonTitle="Delete"
+          confirmButtonTitle={loadingDelete ? 'Deleting...' : 'Delete'}
           onConfirm={handleDeleteConfirm}
           onCancel={() => setOpenDeleteModal(false)}
         />

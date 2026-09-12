@@ -13,3 +13,13 @@ export type Notice = {
 };
 
 export type NoticeListResponse = Notice[];
+
+export type NoticeFormValues = {
+  notice_provider: number | string;
+  notice_date: string;
+  expire_date: string;
+  headline: string;
+  notice_body: string;
+  picture: string;
+  file: string;
+};

@@ -10,9 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/components/ui/use-toast';
 import { Role } from '@/data/types';
-import { APIENDPOINTS } from '@/data/urls';
-import { headerConfig } from '@/lib/header_config';
-import axios, { AxiosError } from 'axios';
+import { getJWT } from '@/data/cookies/getCookies';
 import {
   BadgeCheck,
   Ellipsis,
@@ -22,16 +20,20 @@ import {
   Trash2,
   User,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useTransition, useState } from 'react';
 import type { RoleData } from '../types';
+import {
+  fetchRoles,
+  getRoleById,
+  createRole,
+  updateRole,
+  updateDefaultRole,
+  deleteRole,
+} from '../actions';
 
 type Props = {
   initialRoles: RoleData[];
 };
-
-interface RoleErrorResponse {
-  message?: string;
-}
 
 const Roles: React.FC<Props> = ({ initialRoles }) => {
   const { toast } = useToast();
@@ -42,100 +44,87 @@ const Roles: React.FC<Props> = ({ initialRoles }) => {
   const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
   const [editRoleData, setEditRoleData] = useState<Role | null>(null);
 
-  const fetchRole = async () => {
-    setFetching(true);
-    setError('');
-    try {
-      const response = await axios.get<RoleData[]>(
-        APIENDPOINTS.role.getRoleInfo,
-        headerConfig(),
-      );
-      setRoleList(response.data);
-    } catch (err) {
-      setError("Can't fetch roles. Please try again.");
-      console.error('Error fetching roles:', err);
-    } finally {
+  const [loadingFetch, startFetchTransition] = useTransition();
+  const [loadingDelete, startDeleteTransition] = useTransition();
+  const [loadingDefault, startDefaultTransition] = useTransition();
+  const [loadingGetById, startGetByIdTransition] = useTransition();
+  const [loadingCreate, startCreateTransition] = useTransition();
+  const [loadingEdit, startEditTransition] = useTransition();
+
+  const handleFetchRoles = () => {
+    startFetchTransition(async () => {
+      setError('');
+      setFetching(true);
+      const response = await fetchRoles(getJWT() || '');
       setFetching(false);
-    }
+      if (response?.status === 200 || response?.status === 201) {
+        setRoleList(response.data as RoleData[]);
+      } else {
+        setError("Can't fetch roles. Please try again.");
+      }
+    });
   };
 
-  const deleteRole = async (id: number) => {
-    try {
-      const response = await axios.delete(
-        `${APIENDPOINTS.role.deleteRole}/${id}`,
-        headerConfig(),
-      );
-      if (response.status === 204) {
+  const handleDeleteRole = (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this role?')) return;
+    startDeleteTransition(async () => {
+      const response = await deleteRole(id, getJWT() || '');
+      if (response?.status === 204 || response?.status === 200) {
         toast({ title: 'Role deleted successfully.' });
-        fetchRole();
+        handleFetchRoles();
+      } else {
+        const msg =
+          (response?.data as { message?: string })?.message ||
+          'Failed to delete role.';
+        toast({ title: msg, variant: 'destructive', duration: 3000 });
       }
-    } catch (err) {
-      const error = err as AxiosError<RoleErrorResponse>;
-      const errorMsg =
-        error.response?.data?.message || 'Failed to delete role.';
-      toast({ title: errorMsg, variant: 'destructive', duration: 3000 });
-      console.error('Error deleting role:', err);
-    }
+    });
   };
 
-  const updateDefaultRole = async (id: number) => {
-    try {
-      const response = await axios.put(
-        `${APIENDPOINTS.role.updateDefaultRole}/${id}`,
-        {},
-        headerConfig(),
-      );
-      if (response.status === 200) {
+  const handleUpdateDefaultRole = (id: number) => {
+    startDefaultTransition(async () => {
+      const response = await updateDefaultRole(id, getJWT() || '');
+      if (response?.status === 200 || response?.status === 201) {
         toast({ title: 'Default role updated successfully.' });
-        fetchRole();
+        handleFetchRoles();
+      } else {
+        const msg =
+          (response?.data as { message?: string })?.message ||
+          'Failed to update default role.';
+        toast({ title: msg, variant: 'destructive', duration: 3000 });
       }
-    } catch (err) {
-      const error = err as AxiosError<RoleErrorResponse>;
-      const errorMsg =
-        error.response?.data?.message || 'Failed to update default role.';
-      toast({ title: errorMsg, variant: 'destructive', duration: 3000 });
-      console.error('Error updating default role:', err);
-    }
+    });
   };
 
-  const getRoleById = async (id: number) => {
-    try {
-      const response = await axios.get<Role>(
-        `${APIENDPOINTS.role.getRole}/${id}`,
-        headerConfig(),
-      );
-      if (response.status === 200) {
-        setEditRoleData(response.data);
+  const handleGetRoleById = (id: number) => {
+    startGetByIdTransition(async () => {
+      const response = await getRoleById(id, getJWT() || '');
+      if (response?.status === 200) {
+        setEditRoleData(response.data as Role);
         setEditModalOpen(true);
+      } else {
+        toast({
+          title: 'Failed to fetch role details.',
+          variant: 'destructive',
+        });
       }
-    } catch (err) {
-      toast({
-        title: 'Failed to fetch role details.',
-        variant: 'destructive',
-      });
-      console.error('Error fetching role details:', err);
-    }
+    });
   };
 
-  const handleCreateRole = async (roleData: Omit<Role, 'roleid'>) => {
-    try {
-      const response = await axios.post(
-        APIENDPOINTS.role.createRole,
-        roleData,
-        headerConfig(),
-      );
-      if (response.status === 201) {
+  const handleCreateRole = (roleData: Omit<Role, 'roleid'>) => {
+    startCreateTransition(async () => {
+      const response = await createRole(roleData, getJWT() || '');
+      if (response?.status === 201 || response?.status === 200) {
         toast({ title: 'Role created successfully.' });
-        fetchRole();
+        handleFetchRoles();
         setCreateModalOpen(false);
+      } else {
+        const msg =
+          (response?.data as { message?: string })?.message ||
+          'Failed to create role.';
+        toast({ title: msg, variant: 'destructive', duration: 3000 });
       }
-    } catch (err) {
-      const error = err as AxiosError<RoleErrorResponse>;
-      const errorMsg =
-        error.response?.data?.message || 'Failed to create role.';
-      toast({ title: errorMsg, variant: 'destructive', duration: 3000 });
-      console.error('Error creating role:', err);
-    }
+    });
   };
 
   const handleEditRoleChange = (field: keyof Role, value: Role[keyof Role]) => {
@@ -144,37 +133,30 @@ const Roles: React.FC<Props> = ({ initialRoles }) => {
     }
   };
 
-  const handleEditRoleSubmit = async () => {
+  const handleEditRoleSubmit = () => {
     if (!editRoleData) return;
-    try {
-      const response = await axios.put(
-        `${APIENDPOINTS.role.updateRole}/${editRoleData.roleid}`,
-        editRoleData,
-        headerConfig(),
-      );
-      if (response.status === 200) {
+    startEditTransition(async () => {
+      const response = await updateRole(editRoleData, getJWT() || '');
+      if (response?.status === 200 || response?.status === 201) {
         toast({ title: 'Role updated successfully.' });
-        fetchRole();
+        handleFetchRoles();
         setEditModalOpen(false);
+      } else {
+        const msg =
+          (response?.data as { message?: string })?.message ||
+          'Failed to update role.';
+        toast({ title: msg, variant: 'destructive', duration: 3000 });
       }
-    } catch (err) {
-      const error = err as AxiosError<RoleErrorResponse>;
-      const errorMsg =
-        error.response?.data?.message || 'Failed to update role.';
-      toast({
-        title: errorMsg,
-        variant: 'destructive',
-        duration: 3000,
-      });
-      console.error('Error updating role:', err);
-    }
+    });
   };
 
-  const handleDeleteRole = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this role?')) {
-      await deleteRole(id);
-    }
-  };
+  const isBusy =
+    loadingFetch ||
+    loadingDelete ||
+    loadingDefault ||
+    loadingGetById ||
+    loadingCreate ||
+    loadingEdit;
 
   return (
     <div className="flex flex-col items-center space-y-4 pt-8 h-screen">
@@ -191,6 +173,7 @@ const Roles: React.FC<Props> = ({ initialRoles }) => {
               variant="outline"
               className="flex items-center gap-2"
               onClick={() => setCreateModalOpen(true)}
+              disabled={isBusy}
             >
               <Plus className="h-4 w-4" /> Create Role
             </Button>
@@ -236,13 +219,14 @@ const Roles: React.FC<Props> = ({ initialRoles }) => {
                           variant="ghost"
                           className="h-8 w-8 p-0"
                           aria-label="Open menu"
+                          disabled={isBusy}
                         >
                           <Ellipsis className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => getRoleById(roleRow.roleid)}
+                          onClick={() => handleGetRoleById(roleRow.roleid)}
                           className="cursor-pointer"
                         >
                           <Pencil className="mr-2 h-4 w-4" />
@@ -251,7 +235,9 @@ const Roles: React.FC<Props> = ({ initialRoles }) => {
                         {roleRow.roleid !== 1 && (
                           <>
                             <DropdownMenuItem
-                              onClick={() => updateDefaultRole(roleRow.roleid)}
+                              onClick={() =>
+                                handleUpdateDefaultRole(roleRow.roleid)
+                              }
                               className="cursor-pointer"
                             >
                               <BadgeCheck className="mr-2 h-4 w-4" />
@@ -282,12 +268,14 @@ const Roles: React.FC<Props> = ({ initialRoles }) => {
         editRoleData={editRoleData}
         onEditRoleChange={handleEditRoleChange}
         onSubmit={handleEditRoleSubmit}
+        loading={loadingEdit}
       />
 
       <RoleCreateDialog
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
         onSubmit={handleCreateRole}
+        loading={loadingCreate}
       />
     </div>
   );

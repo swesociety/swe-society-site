@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { APIENDPOINTS } from '@/data/urls';
-import { headerConfig } from '@/lib/header_config';
+import React, { useEffect, useTransition, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { getJWT } from '@/data/cookies/getCookies';
 import { ActivityLogItem } from '@/components/dashboardpage/activitylog/activityLogTypes';
 import { ActivityLogHeader } from '@/components/dashboardpage/activitylog/ActivityLogHeader';
 import { ActivityLogFilters } from '@/components/dashboardpage/activitylog/ActivityLogFilters';
 import { ActivityLogTable } from '@/components/dashboardpage/activitylog/ActivityLogTable';
 import { ActivityLogPagination } from '@/components/dashboardpage/activitylog/ActivityLogPagination';
 import type { ActivityLogResponse } from '../types';
+import { fetchActivityLogs } from '../actions';
 
 interface ActivityLogProps {
   initialData: ActivityLogResponse;
@@ -20,7 +20,6 @@ export default function ActivityLogComponent({
 }: ActivityLogProps) {
   const { toast } = useToast();
   const [logs, setLogs] = useState<ActivityLogItem[]>(initialData.logs);
-  const [loading, setLoading] = useState<boolean>(false);
   const [isAdminView, setIsAdminView] = useState<boolean>(
     initialData.isAdminView,
   );
@@ -33,51 +32,36 @@ export default function ActivityLogComponent({
   const [searchAction, setSearchAction] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const fetchLogs = async () => {
-    setLoading(true);
-    try {
-      // First try admin endpoint
-      let url = `${APIENDPOINTS.activityLog.getAllLogs}?page=${page}&limit=20`;
-      if (selectedCategory !== 'all') url += `&category=${selectedCategory}`;
-      if (searchAction) url += `&action=${encodeURIComponent(searchAction)}`;
-      if (statusFilter !== 'all') url += `&status=${statusFilter}`;
+  const [loading, startFetchTransition] = useTransition();
 
-      let res = await fetch(url, headerConfig());
-
-      if (res.status === 403) {
-        // Fallback to user "my" logs endpoint
-        setIsAdminView(false);
-        let myUrl = `${APIENDPOINTS.activityLog.getMyLogs}?page=${page}&limit=20`;
-        if (selectedCategory !== 'all')
-          myUrl += `&category=${selectedCategory}`;
-        res = await fetch(myUrl, headerConfig());
-      } else {
-        setIsAdminView(true);
+  const fetchLogs = () => {
+    startFetchTransition(async () => {
+      try {
+        const data = await fetchActivityLogs(
+          getJWT() || '',
+          page,
+          selectedCategory,
+          searchAction,
+          statusFilter,
+        );
+        setLogs(data.logs);
+        setTotalPages(data.totalPages);
+        setTotalCount(data.total);
+        setIsAdminView(data.isAdminView);
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Something went wrong';
+        toast({
+          title: 'Error loading logs',
+          description: errorMessage,
+          variant: 'destructive',
+        });
       }
-
-      if (!res.ok) {
-        throw new Error('Failed to fetch activity logs');
-      }
-
-      const data = await res.json();
-      setLogs(data.logs || []);
-      setTotalPages(data.totalPages || 1);
-      setTotalCount(data.total || 0);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Something went wrong';
-      toast({
-        title: 'Error loading logs',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   useEffect(() => {
-    // Avoid double fetching on mount if initialData is provided for default state
+    // Avoid double-fetching on mount when initialData already covers default state
     if (page !== 1 || selectedCategory !== 'all' || statusFilter !== 'all') {
       fetchLogs();
     }
