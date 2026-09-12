@@ -1,8 +1,11 @@
+'use client';
+
 import { EventType } from '@/data/types';
 import Image from 'next/image';
 import { format, isBefore, isAfter } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CalendarIcon } from 'lucide-react';
+import { fallbackImage } from '@/data/dummy/userdata';
 
 const EventCard: React.FC<EventType> = ({
   start_time,
@@ -24,10 +27,6 @@ const EventCard: React.FC<EventType> = ({
 
   const status = getStatus();
 
-  // Fallback image URL
-  const fallbackImage =
-    'https://res.cloudinary.com/djx7nzzzq/image/upload/v1732434266/bazi1kzgltwyahxlozqp.webp';
-
   return (
     <Card className="w-full max-w-md bg-card shadow-md border border-border rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-lg relative">
       <span
@@ -44,7 +43,7 @@ const EventCard: React.FC<EventType> = ({
 
       <div className="relative h-48 w-full">
         <Image
-          src={coverphoto || fallbackImage} // Use fallback image if coverphoto is not provided
+          src={coverphoto || fallbackImage}
           alt={`${headline} cover photo`}
           layout="fill"
           objectFit="cover"

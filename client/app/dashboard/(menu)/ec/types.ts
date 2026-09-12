@@ -87,14 +87,15 @@ export interface CommitteeMemberInput {
 }
 
 export interface ElectionFormInput {
-  year: string;
-  election_type: string;
+  electionid?: number;
+  year?: string;
+  election_type?: string;
   batch?: string;
   election_commissioner?: number;
   assistant_commissioner?: number;
-  candidatereg_start?: string;
-  candidatereg_end?: string;
-  election_start?: string;
-  election_end?: string;
+  candidatereg_start?: string | Date;
+  candidatereg_end?: string | Date;
+  election_start?: string | Date;
+  election_end?: string | Date;
 }
 

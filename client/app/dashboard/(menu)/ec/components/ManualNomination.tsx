@@ -36,42 +36,58 @@ interface MappedPost {
 }
 interface ManualNominationProps {
   electionId: number;
+  users?: any[];
+  posts?: any[];
 }
 
-function ManualNomination({ electionId }: ManualNominationProps) {
+function ManualNomination({
+  electionId,
+  users: usersProp,
+  posts: postsProp,
+}: ManualNominationProps) {
   const [members, setMembers] = useState<Member[]>([]);
   const [disabled, setDisabled] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [postList, setPostList] = useState<MappedPost[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false); // State to control dialog open/close
 
-  const fetchMembers = async () => {
-    try {
-      const usersRes = await axios.get(`${APIENDPOINTS.users.getAllUsers}`);
-      setMembers(usersRes.data);
-
-      const postsRes = await axios.get(APIENDPOINTS.election.getAllPosition);
-      const posts: PostResponse[] = postsRes.data;
-      const mappedPosts = posts.map((post) => ({
-        value: post.committeepostid,
-        label: post.post_name,
-      }));
-      setPostList(mappedPosts);
-    } catch (error) {
-      console.error('Error fetching members or posts:', error);
-      toast({
-        title: 'Error fetching data',
-        description: 'Could not load necessary data for the form.',
-        variant: 'destructive',
-        duration: 3000,
-      });
-    }
-  };
-
   useEffect(() => {
+    if (usersProp && usersProp.length > 0 && postsProp && postsProp.length > 0) {
+      setMembers(usersProp);
+      setPostList(
+        postsProp.map((post: any) => ({
+          value: post.committeepostid,
+          label: post.post_name,
+        })),
+      );
+      return;
+    }
+
+    const fetchMembers = async () => {
+      try {
+        const usersRes = await axios.get(`${APIENDPOINTS.users.getAllUsers}`);
+        setMembers(usersRes.data);
+
+        const postsRes = await axios.get(APIENDPOINTS.election.getAllPosition);
+        const posts: PostResponse[] = postsRes.data;
+        const mappedPosts = posts.map((post) => ({
+          value: post.committeepostid,
+          label: post.post_name,
+        }));
+        setPostList(mappedPosts);
+      } catch (error) {
+        console.error('Error fetching members or posts:', error);
+        toast({
+          title: 'Error fetching data',
+          description: 'Could not load necessary data for the form.',
+          variant: 'destructive',
+          duration: 3000,
+        });
+      }
+    };
+
     fetchMembers();
-    // No need to clearform() here, as onOpenChange will handle it when dialog opens
-  }, []); // Empty dependency array means this runs once on mount
+  }, [usersProp, postsProp]); // Empty dependency array means this runs once on mount
 
   const [formData, setFormData] = useState({
     electionId: electionId,

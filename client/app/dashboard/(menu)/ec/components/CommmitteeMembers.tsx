@@ -299,7 +299,7 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
             Monitor election voting
           </button>
 
-          <ManualNomination electionId={electionId} />
+          <ManualNomination electionId={electionId} users={users} posts={posts} />
 
           <button
             onClick={handleCopy}

@@ -71,11 +71,13 @@ const ElectionCommitteeView: React.FC<Props> = ({
             }
             setShowFullCommitteee={setShowFullCommitteee}
             setSelectedElectionId={setSelectedElectionId}
+            users={initialCommitteeData?.users}
           />
           {isModalOpen && (
             <ElectionModal
               onClose={() => setIsModalOpen(false)}
               fetchData={fetchData}
+              users={initialCommitteeData?.users}
             />
           )}
         </>

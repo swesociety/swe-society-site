@@ -2,12 +2,34 @@
 
 import axios from 'axios';
 import { getAxiosErrorResult } from '@/lib/axiosError';
-import { SocietyFeeApiResponse } from '@/components/billing/billingmanage/types';
+import type { AxiosRequestConfig } from 'axios';
+import { SocietyFeeApiResponse, SocietyFeeRecord } from '@/components/billing/billingmanage/types';
 import { UserSocietyFeeResponse } from './types/UserSocietyFeeTypes';
+import { APIENDPOINTS } from '@/data/urls';
+
+export const getSocietyFeeDataServer = async (
+  token: string,
+): Promise<SocietyFeeApiResponse | null> => {
+  try {
+    const response = await axios.get<SocietyFeeApiResponse>(
+      APIENDPOINTS.societyFee.getData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching society fee data server: ', error);
+    return null;
+  }
+};
+
 
 export const getSocietyFeeData = async (
   url: string,
-  config: Record<string, unknown>,
+  config: AxiosRequestConfig,
 ) => {
   try {
     const response = await axios.get<SocietyFeeApiResponse>(url, config);
@@ -21,7 +43,7 @@ export const getSocietyFeeData = async (
 export const batchUpdateSocietyFeeStatus = async (
   url: string,
   requestBody: { action: 'verify_all' | 'accept_all'; societyFeeIds: number[] },
-  config: Record<string, unknown>,
+  config: AxiosRequestConfig,
 ) => {
   try {
     const response = await axios.put<{ updatedCount: number }>(
@@ -38,7 +60,7 @@ export const batchUpdateSocietyFeeStatus = async (
 
 export const getUserSocietyFee = async (
   url: string,
-  config: Record<string, unknown>,
+  config: AxiosRequestConfig,
 ) => {
   try {
     const response = await axios.get<UserSocietyFeeResponse>(url, config);
@@ -51,8 +73,8 @@ export const getUserSocietyFee = async (
 
 export const saveSocietyFeeRecord = async (
   url: string,
-  requestBody: Record<string, unknown>,
-  config: Record<string, unknown>,
+  requestBody: Partial<SocietyFeeRecord>,
+  config: AxiosRequestConfig,
 ) => {
   try {
     const response = await axios.post(url, requestBody, config);
@@ -65,7 +87,7 @@ export const saveSocietyFeeRecord = async (
 
 export const deleteSocietyFeeRecord = async (
   url: string,
-  config: Record<string, unknown>,
+  config: AxiosRequestConfig,
 ) => {
   try {
     const response = await axios.delete(url, config);

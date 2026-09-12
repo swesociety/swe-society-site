@@ -20,6 +20,7 @@ import { createElection } from '../actions';
 interface ElectionModalProps {
   onClose: () => void;
   fetchData: () => void;
+  users?: UserResponse[];
 }
 
 interface UserResponse {
@@ -49,7 +50,21 @@ interface ElectionFormData {
 const ElectionModal: React.FC<ElectionModalProps> = ({
   onClose,
   fetchData,
+  users: usersProp = [],
 }) => {
+  const [fetchedUserList, setFetchedUserList] = useState<MappedUser[]>([]);
+
+  const userList = React.useMemo(() => {
+    if (usersProp && usersProp.length > 0) {
+      return usersProp.map((user) => ({
+        id: user.userid,
+        value: user.userid,
+        label: `${user.fullname} - ${user.regno}`,
+      }));
+    }
+    return fetchedUserList;
+  }, [usersProp, fetchedUserList]);
+
   const now = new Date();
 
   const todayAt10AM = new Date(
@@ -71,7 +86,6 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
     0,
     0,
   );
-  const [userList, setUserList] = useState<MappedUser[]>([]);
   const [formData, setFormData] = useState<ElectionFormData>({
     year: '',
     election_type: '',
@@ -191,14 +205,13 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
     });
   };
   useEffect(() => {
-    console.log(candidateStartDate);
-    console.log(candidateEndDate);
+    if (usersProp && usersProp.length > 0) return;
     const fetchUsers = async () => {
       try {
         const response = await fetch(`${BACKENDURL}users/`);
         if (!response.ok) throw new Error('Network response was not ok');
         const data: UserResponse[] = await response.json();
-        setUserList(
+        setFetchedUserList(
           data.map((user) => ({
             id: user.userid,
             value: user.userid,
@@ -210,7 +223,7 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
       }
     };
     fetchUsers();
-  }, []);
+  }, [usersProp]);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">

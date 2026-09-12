@@ -36,6 +36,7 @@ interface ElectionCommitteeProps {
   setShowFullCommitteee: React.Dispatch<React.SetStateAction<boolean>>;
   setSelectedElectionId: React.Dispatch<React.SetStateAction<number | null>>;
   fetchData: () => void;
+  users?: any[];
 }
 
 const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
@@ -43,6 +44,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
   setShowFullCommitteee,
   setSelectedElectionId,
   fetchData,
+  users,
 }) => {
   const [role, setRole] = useState<string>(getUserRole() || 'general_member');
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
@@ -207,6 +209,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
           onClose={() => setOpenEditModal(false)}
           fetchData={fetchData}
           election_info={electioneditInfo}
+          users={users}
         />
       )}
 

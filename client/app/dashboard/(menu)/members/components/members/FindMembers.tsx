@@ -16,7 +16,13 @@ import { UserTable } from "./UserTable";
 import { RoleUpdateDialog } from "./RoleUpdateDialog";
 import { UserDetailsDialog } from "./UserDetailsDialog";
 
-const FindMember: React.FC = () => {
+import type { MemberDataType } from "@/data/types";
+
+interface FindMemberProps {
+  initialMembers?: MemberDataType[];
+}
+
+const FindMember: React.FC<FindMemberProps> = ({ initialMembers }) => {
   const {
     data,
     selectedUserIds,
@@ -24,7 +30,7 @@ const FindMember: React.FC = () => {
     handleSelectUser,
     setSelectedUserIds,
     handleRoleUpdate,
-  } = useUsers();
+  } = useUsers(initialMembers);
   const [search, setSearch] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);

@@ -1,12 +1,8 @@
+'use client';
+
 import { EventType } from '@/data/types';
 import { format, isBefore, isAfter } from 'date-fns';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CalendarIcon } from 'lucide-react';
 
 const EventCard: React.FC<EventType> = ({
@@ -47,8 +43,6 @@ const EventCard: React.FC<EventType> = ({
         <img
           src={coverphoto}
           alt={`${headline} cover photo`}
-          // layout="fill"
-          // objectFit="cover"
           className="rounded-t-lg"
         />
       </div>

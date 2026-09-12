@@ -24,28 +24,40 @@ type Payment = {
   created_at: string;
 };
 
-const UserPaymentsTable: React.FC = () => {
+interface UserPaymentsTableProps {
+  initialPayments?: Payment[];
+}
+
+const UserPaymentsTable: React.FC<UserPaymentsTableProps> = ({
+  initialPayments,
+}) => {
   const userId = getUserID();
   const { toast } = useToast();
-  const [payments, setPayments] = useState<Payment[]>([]);
+  const [payments, setPayments] = useState<Payment[]>(initialPayments ?? []);
   const [modalSlipUrl, setModalSlipUrl] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
-  const fetchPayments = async () => {
-    try {
-      const res = await axios.get(
-        `${APIENDPOINTS.billing.getIndiUserPayments}/${userId}`,
-        headerConfig(),
-      );
-      setPayments(res.data);
-    } catch (err) {
-      console.error('Error fetching payments:', err);
-    }
-  };
-
   useEffect(() => {
-    fetchPayments();
-  }, [userId]);
+    if (initialPayments && initialPayments.length > 0) {
+      setPayments(initialPayments);
+      return;
+    }
+    const fetchPayments = async () => {
+      try {
+        const res = await axios.get(
+          `${APIENDPOINTS.billing.getIndiUserPayments}/${userId}`,
+          headerConfig(),
+        );
+        setPayments(res.data);
+      } catch (err) {
+        console.error('Error fetching payments:', err);
+      }
+    };
+    if (userId) {
+      fetchPayments();
+    }
+  }, [userId, initialPayments]);
+
 
   const handleDelete = async (paymentId: number) => {
     try {
