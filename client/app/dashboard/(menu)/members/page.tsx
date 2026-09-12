@@ -1,5 +1,8 @@
+import { getAllUsersServer } from "./actions";
 import Members from "./components/Members";
 
 export default async function Page() {
-  return <Members />;
+  const initialMembers = await getAllUsersServer();
+
+  return <Members initialMembers={initialMembers} />;
 }

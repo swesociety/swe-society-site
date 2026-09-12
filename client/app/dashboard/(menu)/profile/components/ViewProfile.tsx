@@ -1,16 +1,17 @@
-"use client";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
-import { UserProfile } from "@/data/types";
-import { CircleSlash, Facebook, GithubIcon, LinkedinIcon } from "lucide-react";
-import Link from "next/link";
-import React from "react";
-import ProfileCard from "./ProfileCard";
-import SkillManagement from "./SkillManagement";
-import CVSection from "./CVSection";
-import EditProject from "./EditProject";
+'use client';
+
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import { UserProfile } from '@/data/types';
+import { CircleSlash, Facebook, GithubIcon, LinkedinIcon } from 'lucide-react';
+import Link from 'next/link';
+import React from 'react';
+import CVSection from './CVSection';
+import EditProject from './EditProject';
+import ProfileCard from './ProfileCard';
+import SkillManagement from './SkillManagement';
 
 interface ViewProfileProps {
   values: UserProfile | undefined;
@@ -20,7 +21,7 @@ const ViewProfile: React.FC<ViewProfileProps> = ({ values }) => {
   const { toast } = useToast();
   const NA = () => {
     toast({
-      title: "Not Available",
+      title: 'Not Available',
       duration: 1000,
     });
   };
@@ -71,10 +72,10 @@ const ViewProfile: React.FC<ViewProfileProps> = ({ values }) => {
             <AvatarImage
               src={
                 values?.profile_picture ??
-                "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
+                'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'
               }
               className="rounded-full border-2 border-white p-2"
-              style={{ objectFit: "cover" }}
+              style={{ objectFit: 'cover' }}
             />
           </Avatar>
 
@@ -150,45 +151,45 @@ const ViewProfile: React.FC<ViewProfileProps> = ({ values }) => {
           <div className="flex gap-2">
             {values?.linkedin_id ? (
               <Link href={values?.linkedin_id} target="_blank">
-                <Button variant={"outline"} size={"icon"}>
+                <Button variant={'outline'} size={'icon'}>
                   <LinkedinIcon />
                 </Button>
               </Link>
             ) : (
-              <Button variant={"outline"} size={"icon"} onClick={NA}>
+              <Button variant={'outline'} size={'icon'} onClick={NA}>
                 <LinkedinIcon />
               </Button>
             )}
             {values?.github_id ? (
               <Link href={values?.github_id} target="_blank">
-                <Button variant={"outline"} size={"icon"}>
+                <Button variant={'outline'} size={'icon'}>
                   <GithubIcon />
                 </Button>
               </Link>
             ) : (
-              <Button variant={"outline"} size={"icon"} onClick={NA}>
+              <Button variant={'outline'} size={'icon'} onClick={NA}>
                 <GithubIcon />
               </Button>
             )}
             {values?.stop_stalk_id ? (
               <Link href={values?.stop_stalk_id} target="_blank">
-                <Button variant={"outline"} size={"icon"}>
+                <Button variant={'outline'} size={'icon'}>
                   <CircleSlash />
                 </Button>
               </Link>
             ) : (
-              <Button variant={"outline"} size={"icon"} onClick={NA}>
+              <Button variant={'outline'} size={'icon'} onClick={NA}>
                 <CircleSlash />
               </Button>
             )}
             {values?.facebook_id ? (
               <Link href={values?.facebook_id} target="_blank">
-                <Button variant={"outline"} size={"icon"}>
+                <Button variant={'outline'} size={'icon'}>
                   <Facebook />
                 </Button>
               </Link>
             ) : (
-              <Button variant={"outline"} size={"icon"} onClick={NA}>
+              <Button variant={'outline'} size={'icon'} onClick={NA}>
                 <Facebook />
               </Button>
             )}

@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/table';
 import { TableProps } from '@/data/types';
 import { flexRender } from '@tanstack/react-table';
+import { TablePagination } from '@/components/ui/table-pagination';
 
 export const UserTable: React.FC<TableProps & { table: any }> = ({
   table,
@@ -62,28 +63,14 @@ export const UserTable: React.FC<TableProps & { table: any }> = ({
           </TableBody>
         </Table>
       </div>
-      <div className="flex justify-between py-4">
-        <span className="text-xs text-slate-400 mx-2">
-          Page {table.getState().pagination.pageIndex + 1} of{' '}
-          {table.getPageCount()}
-        </span>
-        <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
-      </div>
+      <TablePagination
+        pageIndex={table.getState().pagination.pageIndex}
+        pageCount={table.getPageCount()}
+        canPreviousPage={table.getCanPreviousPage()}
+        canNextPage={table.getCanNextPage()}
+        onPreviousPage={() => table.previousPage()}
+        onNextPage={() => table.nextPage()}
+      />
     </>
   );
 };

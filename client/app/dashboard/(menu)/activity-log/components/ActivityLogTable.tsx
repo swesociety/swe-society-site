@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
-import { ActivityLogItem } from "./activityLogTypes";
+import React from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Loader2 } from 'lucide-react';
+import { ActivityLogItem } from '../types';
 
 interface ActivityLogTableProps {
   logs: ActivityLogItem[];
@@ -50,7 +50,10 @@ export const ActivityLogTable: React.FC<ActivityLogTableProps> = ({
           </thead>
           <tbody className="divide-y">
             {logs.map((log) => (
-              <tr key={log.logid} className="hover:bg-muted/20 transition-colors">
+              <tr
+                key={log.logid}
+                className="hover:bg-muted/20 transition-colors"
+              >
                 <td className="py-3 px-4 whitespace-nowrap text-xs text-muted-foreground">
                   {new Date(log.created_at).toLocaleString()}
                 </td>
@@ -61,7 +64,9 @@ export const ActivityLogTable: React.FC<ActivityLogTableProps> = ({
                         {log.actor_regno}
                       </span>
                     ) : (
-                      <span className="text-muted-foreground text-xs italic">System / Guest</span>
+                      <span className="text-muted-foreground text-xs italic">
+                        System / Guest
+                      </span>
                     )}
                   </td>
                 )}
@@ -72,7 +77,7 @@ export const ActivityLogTable: React.FC<ActivityLogTableProps> = ({
                         {log.actor_role}
                       </Badge>
                     ) : (
-                      "-"
+                      '-'
                     )}
                   </td>
                 )}
@@ -84,11 +89,14 @@ export const ActivityLogTable: React.FC<ActivityLogTableProps> = ({
                 <td className="py-3 px-4 font-mono text-xs font-semibold text-foreground">
                   {log.action}
                 </td>
-                <td className="py-3 px-4 text-xs text-muted-foreground max-w-xs truncate" title={log.description || ""}>
-                  {log.description || "-"}
+                <td
+                  className="py-3 px-4 text-xs text-muted-foreground max-w-xs truncate"
+                  title={log.description || ''}
+                >
+                  {log.description || '-'}
                 </td>
                 <td className="py-3 px-4">
-                  {log.status === "success" ? (
+                  {log.status === 'success' ? (
                     <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/25">
                       Success
                     </Badge>
@@ -98,7 +106,7 @@ export const ActivityLogTable: React.FC<ActivityLogTableProps> = ({
                 </td>
                 {isAdminView && (
                   <td className="py-3 px-4 font-mono text-xs text-muted-foreground">
-                    {log.ip_address || "N/A"}
+                    {log.ip_address || 'N/A'}
                   </td>
                 )}
               </tr>

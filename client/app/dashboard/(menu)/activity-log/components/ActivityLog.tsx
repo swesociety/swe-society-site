@@ -3,13 +3,12 @@
 import React, { useEffect, useTransition, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { getJWT } from '@/data/cookies/getCookies';
-import { ActivityLogItem } from '@/components/dashboardpage/activitylog/activityLogTypes';
-import { ActivityLogHeader } from '@/components/dashboardpage/activitylog/ActivityLogHeader';
-import { ActivityLogFilters } from '@/components/dashboardpage/activitylog/ActivityLogFilters';
-import { ActivityLogTable } from '@/components/dashboardpage/activitylog/ActivityLogTable';
-import { ActivityLogPagination } from '@/components/dashboardpage/activitylog/ActivityLogPagination';
-import type { ActivityLogResponse } from '../types';
+import type { ActivityLogItem, ActivityLogResponse } from '../types';
 import { fetchActivityLogs } from '../actions';
+import { ActivityLogFilters } from './ActivityLogFilters';
+import { ActivityLogHeader } from './ActivityLogHeader';
+import { ActivityLogTable } from './ActivityLogTable';
+import { ActivityLogPagination } from './ActivityLogPagination';
 
 interface ActivityLogProps {
   initialData: ActivityLogResponse;

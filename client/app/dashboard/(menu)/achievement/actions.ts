@@ -2,7 +2,7 @@
 
 import { BACKENDURL } from '@/data/urls';
 import axios from 'axios';
-import type { AchievementListResponse } from './types';
+import type { AchievementListResponse, FormDataType } from './types';
 import { getAxiosErrorResult } from '@/lib/axiosError';
 
 export interface AchievementUser {
@@ -39,7 +39,7 @@ export const getAchievementUsers = async (): Promise<AchievementUser[]> => {
 };
 
 export const createAchievement = async (
-  requestBody: Record<string, unknown>,
+  requestBody: Partial<FormDataType>,
   token: string,
 ) => {
   try {
@@ -61,7 +61,7 @@ export const createAchievement = async (
 
 export const editAchievementById = async (
   id: string,
-  requestBody: Record<string, unknown>,
+  requestBody: Partial<FormDataType>,
   token: string,
 ) => {
   try {

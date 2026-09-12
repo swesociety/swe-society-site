@@ -1,10 +1,10 @@
-export const timeZone = "Asia/Dhaka";
-import { DateTime } from "luxon";
+export const timeZone = 'Asia/Dhaka';
+import { DateTime } from 'luxon';
 
 export function formatDateDDMMYYYY(date: string | Date): string {
   const d = new Date(date);
-  const day = d.getDate().toString().padStart(2, "0");
-  const month = (d.getMonth() + 1).toString().padStart(2, "0"); // Months are 0-indexed
+  const day = d.getDate().toString().padStart(2, '0');
+  const month = (d.getMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed
   const year = d.getFullYear();
   return `${day}/${month}/${year}`;
 }
@@ -26,7 +26,7 @@ export function combineDateAndTime(electionDate: Date, time: Date): Date {
       minute: newDate.getMinutes(),
       second: newDate.getSeconds(),
     },
-    { zone: timeZone }
+    { zone: timeZone },
   );
   const specificLocalTimeToUtc = specificLocalTime.toUTC();
 
@@ -44,10 +44,10 @@ export const Validation = (formData: {
   election_commissioner?: number;
   assistant_commissioner?: number;
 }) => {
-  var form_error = "";
+  var form_error = '';
   // Validation checks
   if (!formData.year.trim()) {
-    form_error = "Please enter a year";
+    form_error = 'Please enter a year';
   }
 
   let value = formData.year.trim();
@@ -57,22 +57,22 @@ export const Validation = (formData: {
     (value &&
       (Number(value) < 1900 || Number(value) > new Date().getFullYear()))
   ) {
-    form_error = "Please enter a valid year";
+    form_error = 'Please enter a valid year';
   } else if (!formData.election_type) {
-    form_error = "Please select an election type";
-  } else if (formData.election_type === "Batch" && !formData.batch?.trim()) {
-    form_error = "Please enter a batch";
+    form_error = 'Please select an election type';
+  } else if (formData.election_type === 'Batch' && !formData.batch?.trim()) {
+    form_error = 'Please enter a batch';
   } else if (!formData.election_commissioner) {
-    form_error = "Please select an election commissioner";
+    form_error = 'Please select an election commissioner';
   } else if (!formData.assistant_commissioner) {
-    form_error = "Please select an assistant commissioner";
+    form_error = 'Please select an assistant commissioner';
   } else if (
     !formData.candidatereg_start ||
     !formData.candidatereg_end ||
     !formData.election_start ||
     !formData.election_end
   ) {
-    form_error = "Please select all dates";
+    form_error = 'Please select all dates';
   }
 
   return form_error;

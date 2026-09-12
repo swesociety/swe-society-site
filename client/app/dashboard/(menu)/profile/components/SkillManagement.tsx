@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { X, Plus } from "lucide-react";
-import axios from "axios";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { X } from 'lucide-react';
+import axios from 'axios';
+import { cn } from '@/lib/utils';
 import { APIENDPOINTS } from '@/data/urls';
 import { headerConfig } from '@/lib/header_config';
 
@@ -24,9 +24,9 @@ const SkillManagement: React.FC<SkillManagementProps> = ({
   selectedSkills = [],
   edit = false,
   onChange,
-  className
+  className,
 }) => {
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<Skill[]>([]);
   const [skills, setSkills] = useState<string[]>(selectedSkills);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -35,15 +35,17 @@ const SkillManagement: React.FC<SkillManagementProps> = ({
     if (input.length > 0) {
       const fetchSuggestions = async () => {
         try {
-        
-        const response = await axios.get(APIENDPOINTS.skill.getAllSkill, headerConfig());
+          const response = await axios.get(
+            APIENDPOINTS.skill.getAllSkill,
+            headerConfig(),
+          );
           const filteredSuggestions = response.data.filter((skill: Skill) =>
-            skill.skill.toLowerCase().includes(input.toLowerCase())
+            skill.skill.toLowerCase().includes(input.toLowerCase()),
           );
           setSuggestions(filteredSuggestions);
           setShowSuggestions(true);
         } catch (error) {
-          console.error("Error fetching skills:", error);
+          console.error('Error fetching skills:', error);
           setSuggestions([]);
         }
       };
@@ -55,18 +57,18 @@ const SkillManagement: React.FC<SkillManagementProps> = ({
   }, [input]);
 
   const handleAddSkill = (skill: string) => {
-    if (!skills.includes(skill) && skill.trim() !== "") {
+    if (!skills.includes(skill) && skill.trim() !== '') {
       const updatedSkills = [...skills, skill];
       setSkills(updatedSkills);
       onChange?.(updatedSkills);
-      setInput("");
+      setInput('');
       setSuggestions([]);
       setShowSuggestions(false);
     }
   };
 
   const handleRemoveSkill = (skillToRemove: string) => {
-    const updatedSkills = skills.filter(skill => skill !== skillToRemove);
+    const updatedSkills = skills.filter((skill) => skill !== skillToRemove);
     setSkills(updatedSkills);
     onChange?.(updatedSkills);
   };
@@ -79,7 +81,7 @@ const SkillManagement: React.FC<SkillManagementProps> = ({
   };
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn('relative', className)}>
       <p className="text-xs font-semibold">Skills</p>
       {edit && (
         <div className="relative mb-2">
@@ -93,13 +95,17 @@ const SkillManagement: React.FC<SkillManagementProps> = ({
           {input.trim() && showSuggestions && (
             <div className="absolute z-10 w-full mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
               {/* Show current input as a custom skill option */}
-              {!suggestions.some(s => s.skill.toLowerCase() === input.toLowerCase()) && (
+              {!suggestions.some(
+                (s) => s.skill.toLowerCase() === input.toLowerCase(),
+              ) && (
                 <div
                   className="p-2 hover:bg-accent cursor-pointer flex justify-between items-center border-b"
                   onClick={() => handleAddSkill(input.trim())}
                 >
                   <span>{input}</span>
-                  <span className="text-xs text-muted-foreground">Add custom skill</span>
+                  <span className="text-xs text-muted-foreground">
+                    Add custom skill
+                  </span>
                 </div>
               )}
               {/* Show API suggestions */}
@@ -110,7 +116,9 @@ const SkillManagement: React.FC<SkillManagementProps> = ({
                   onClick={() => handleAddSkill(suggestion.skill)}
                 >
                   <span>{suggestion.skill}</span>
-                  <span className="text-xs text-muted-foreground">{suggestion.area}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {suggestion.area}
+                  </span>
                 </div>
               ))}
             </div>

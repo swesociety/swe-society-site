@@ -7,6 +7,7 @@ import React, {
   useState,
   useTransition,
 } from 'react';
+import { TablePagination } from '@/components/ui/table-pagination';
 import { APIENDPOINTS } from '@/data/urls';
 import { headerConfig } from '@/lib/header_config';
 import { getUserID } from '@/data/cookies/getCookies';
@@ -44,6 +45,8 @@ export type {
   SocietyFeeApiResponse,
 } from '../../../../../../components/billing/billingmanage/types';
 
+const PAGE_SIZE = 20;
+
 const SocietyFeeTable: React.FC = () => {
   const { toast } = useToast();
   const { roleAccess, loading: profileLoading } = useProfile();
@@ -63,6 +66,9 @@ const SocietyFeeTable: React.FC = () => {
   const [activeBatch, setActiveBatch] = useState<string>('all');
   const [semesterFilter, setSemesterFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // ── Pagination ─────────────────────────────────────────────────────────────
+  const [pageIndex, setPageIndex] = useState(0);
 
   const [selectedAdmin, setSelectedAdmin] = useState<AdminProfileInfo | null>(
     null,
@@ -148,15 +154,32 @@ const SocietyFeeTable: React.FC = () => {
     return users;
   }, [data, activeBatch, searchQuery]);
 
+  // Reset to first page whenever filters change
+  useEffect(() => {
+    setPageIndex(0);
+  }, [activeBatch, semesterFilter, searchQuery]);
+
+  // ── Pagination helpers ─────────────────────────────────────────────────────
+  const pageCount = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const canPreviousPage = pageIndex > 0;
+  const canNextPage = pageIndex < pageCount - 1;
+
+  const paginatedUsers = useMemo(
+    () => filteredUsers.slice(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE),
+    [filteredUsers, pageIndex],
+  );
+
+  // Group only the current page's users by batch
   const usersByBatch = useMemo(() => {
     const grouped: Record<string, UserSocietyFeeRow[]> = {};
-    for (const u of filteredUsers) {
+    for (const u of paginatedUsers) {
       if (!grouped[u.batch]) grouped[u.batch] = [];
       grouped[u.batch].push(u);
     }
     return grouped;
-  }, [filteredUsers]);
+  }, [paginatedUsers]);
 
+  // Stats are computed over ALL filtered users (not just the current page)
   const stats = useMemo(() => {
     if (!data) return { verified: 0, pending: 0, unpaid: 0 };
     let verified = 0,
@@ -371,6 +394,18 @@ const SocietyFeeTable: React.FC = () => {
         activeBatch={activeBatch}
         onSelectCell={(t) => setToggleTarget(t)}
         onSelectAdminProfile={(info) => setSelectedAdmin(info)}
+      />
+
+      {/* Pagination */}
+      <TablePagination
+        pageIndex={pageIndex}
+        pageCount={pageCount}
+        totalCount={filteredUsers.length}
+        itemLabel="students"
+        canPreviousPage={canPreviousPage}
+        canNextPage={canNextPage}
+        onPreviousPage={() => setPageIndex((p) => p - 1)}
+        onNextPage={() => setPageIndex((p) => p + 1)}
       />
 
       {/* 2-Step Verification Modal */}

@@ -1,0 +1,6 @@
+
+# Run type checking on entire project
+npm run type-check --prefix client || exit 1
+
+# Run lint-staged (lints and formats only staged files)
+npx lint-staged || exit 1

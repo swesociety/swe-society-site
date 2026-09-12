@@ -1,27 +1,26 @@
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { APIENDPOINTS, BACKENDURL } from "@/data/urls";
-import { addDays, format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import Select from "react-select";
-// import { setTimeout } from "timers/promises";
-import { getJWT } from "@/data/cookies/getCookies";
-import { encryptObject, reqSalt_keys } from "@/utils/encrypt_req";
-import axios from "axios";
-import { DateTime } from "luxon";
-import { TimePicker } from "../ui/time-picker";
-import { toast } from "../ui/use-toast";
-import { combineDateAndTime, timeZone, Validation } from "./functions";
+} from '@/components/ui/popover';
+import { BACKENDURL } from '@/data/urls';
+import { addDays, format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
+import React, { useEffect, useState, useTransition } from 'react';
+import Select from 'react-select';
+import { getJWT } from '@/data/cookies/getCookies';
+import { DateTime } from 'luxon';
+import { TimePicker } from '../../../../../components/ui/time-picker';
+import { toast } from '../../../../../components/ui/use-toast';
+import { combineDateAndTime, timeZone, Validation } from '../utils';
+import { createElection } from '../actions';
 
 interface ElectionModalProps {
   onClose: () => void;
   fetchData: () => void;
+  users?: UserResponse[];
 }
 
 interface UserResponse {
@@ -51,7 +50,21 @@ interface ElectionFormData {
 const ElectionModal: React.FC<ElectionModalProps> = ({
   onClose,
   fetchData,
+  users: usersProp = [],
 }) => {
+  const [fetchedUserList, setFetchedUserList] = useState<MappedUser[]>([]);
+
+  const userList = React.useMemo(() => {
+    if (usersProp && usersProp.length > 0) {
+      return usersProp.map((user) => ({
+        id: user.userid,
+        value: user.userid,
+        label: `${user.fullname} - ${user.regno}`,
+      }));
+    }
+    return fetchedUserList;
+  }, [usersProp, fetchedUserList]);
+
   const now = new Date();
 
   const todayAt10AM = new Date(
@@ -61,7 +74,7 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
     10, // hours
     0, // minutes
     0, // seconds
-    0 // milliseconds
+    0, // milliseconds
   );
 
   const todayAt10PM = new Date(
@@ -71,20 +84,19 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
     22, // 10 PM in 24-hour format
     0,
     0,
-    0
+    0,
   );
-  const [userList, setUserList] = useState<MappedUser[]>([]);
   const [formData, setFormData] = useState<ElectionFormData>({
-    year: "",
-    election_type: "",
-    batch: "",
+    year: '',
+    election_type: '',
+    batch: '',
   });
 
   const [electionDate, setelectionDate] = useState<Date>(
-    addDays(new Date(), 7)
+    addDays(new Date(), 7),
   );
   const [electionStart, setelectionStart] = useState<Date | undefined>(
-    todayAt10AM
+    todayAt10AM,
   );
   const [electionEnd, setelectionEnd] = useState<Date | undefined>(todayAt10PM);
   const [candidateStartDate, setCandidateStartDate] = useState<Date>(
@@ -95,8 +107,8 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
       0,
       0,
       0,
-      0
-    )
+      0,
+    ),
   );
   const [candidateEndDate, setCandidateEndDate] = useState<Date>(
     new Date(
@@ -106,14 +118,15 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
       23,
       59,
       59,
-      999
-    )
+      999,
+    ),
   );
 
   const [disabled, setDisabled] = useState<boolean>(false);
+  const [loading, startTransition] = useTransition();
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -121,7 +134,7 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
 
   const handleSelectChange = (
     selectedOption: MappedUser | null,
-    field: keyof ElectionFormData
+    field: keyof ElectionFormData,
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -129,91 +142,88 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      setDisabled(true);
-      const election_info = {
-        year: formData.year,
-        election_type: formData.election_type,
-        batch: formData.election_type === "Batch" ? formData.batch : undefined,
-        election_commissioner: formData.election_commissioner,
-        assistant_commissioner: formData.assistant_commissioner,
-        candidatereg_start:
-          DateTime.fromJSDate(candidateStartDate, {
-            zone: timeZone,
-          }).toISO() || "",
-        candidatereg_end:
-          DateTime.fromJSDate(candidateEndDate, {
-            zone: timeZone,
-          }).toISO() || "",
-        election_start: combineDateAndTime(
-          electionDate,
-          electionStart ?? new Date(electionDate)
-        ),
-        election_end: combineDateAndTime(
-          electionDate,
-          electionEnd ?? new Date(electionDate)
-        ),
-      };
-      const encrypted_info = encryptObject(
-        election_info,
-        reqSalt_keys.election.createElection
-      );
+    const electionStartDate = combineDateAndTime(
+      electionDate,
+      electionStart ?? new Date(electionDate),
+    );
+    const electionEndDate = combineDateAndTime(
+      electionDate,
+      electionEnd ?? new Date(electionDate),
+    );
 
-      // // Validation checks
-      if (Validation(election_info) === "") {
-        const response = await axios.post(
-          `${APIENDPOINTS.election.createElection}`,
-          encrypted_info,
-          { headers: { Authorization: `Bearer ${getJWT()}` } }
-        );
-        if (response.status === 201 || response.status === 200) {
-          onClose();
-          fetchData();
-        }
+    const election_info = {
+      year: formData.year,
+      election_type: formData.election_type,
+      batch: formData.election_type === 'Batch' ? formData.batch : undefined,
+      election_commissioner: formData.election_commissioner,
+      assistant_commissioner: formData.assistant_commissioner,
+      candidatereg_start:
+        DateTime.fromJSDate(candidateStartDate, {
+          zone: timeZone,
+        }).toISO() || '',
+      candidatereg_end:
+        DateTime.fromJSDate(candidateEndDate, {
+          zone: timeZone,
+        }).toISO() || '',
+      election_start: electionStartDate,
+      election_end: electionEndDate,
+    };
+
+    const validationMessage = Validation(election_info);
+    if (validationMessage !== '') {
+      toast({
+        title: validationMessage,
+        description: 'Please fill all the fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setDisabled(true);
+    startTransition(async () => {
+      const response = await createElection(
+        {
+          ...election_info,
+          election_start: electionStartDate.toISOString(),
+          election_end: electionEndDate.toISOString(),
+        },
+        getJWT() || '',
+      );
+      if (response.status === 200 || response.status === 201) {
+        onClose();
+        fetchData();
       } else {
         toast({
-          title: Validation(election_info),
-          description: "Please fill all the fields",
-          variant: "destructive",
+          title: 'Failed to create election. Please try again.',
+          description: response.data?.message,
         });
       }
       setDisabled(false);
-    } catch (error) {
-      console.error("Error creating election:", error);
-
-      toast({
-        title: "Failed to create election. Please try again.",
-        description: (error as any).message,
-      });
-      setTimeout(() => {
-        setDisabled(false);
-      }, 3000);
-    }
+    });
   };
   useEffect(() => {
-    console.log(candidateStartDate);
-    console.log(candidateEndDate);
+    if (usersProp && usersProp.length > 0) return;
     const fetchUsers = async () => {
       try {
         const response = await fetch(`${BACKENDURL}users/`);
-        if (!response.ok) throw new Error("Network response was not ok");
+        if (!response.ok) throw new Error('Network response was not ok');
         const data: UserResponse[] = await response.json();
-        setUserList(
+        setFetchedUserList(
           data.map((user) => ({
             id: user.userid,
             value: user.userid,
             label: `${user.fullname} - ${user.regno}`,
-          }))
+          })),
         );
       } catch (error) {
-        console.error("Fetch error:", error);
+        console.error('Fetch error:', error);
       }
     };
     fetchUsers();
-  }, []);
+  }, [usersProp]);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
@@ -247,7 +257,7 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
             <option value="Society">Society</option>
             <option value="Batch">Batch</option>
           </select>
-          {formData.election_type === "Batch" && (
+          {formData.election_type === 'Batch' && (
             <input
               type="text"
               name="batch"
@@ -301,7 +311,7 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
           <Select
             options={userList}
             onChange={(option) =>
-              handleSelectChange(option, "election_commissioner")
+              handleSelectChange(option, 'election_commissioner')
             }
             className="border rounded w-full text-gray-800 bg-gray-100"
             placeholder="Election Commissioner"
@@ -309,7 +319,7 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
           <Select
             options={userList}
             onChange={(option) =>
-              handleSelectChange(option, "assistant_commissioner")
+              handleSelectChange(option, 'assistant_commissioner')
             }
             className="border rounded w-full text-gray-800 bg-gray-100"
             placeholder="Assistant Commissioner"
@@ -324,11 +334,11 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
               Close
             </button>
             <button
-              disabled={disabled}
+              disabled={disabled || loading}
               onClick={handleSubmit}
-              className="bg-red-600 text-white rounded px-4 py-2"
+              className="bg-red-600 text-white rounded px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Submit
+              {loading ? 'Submitting...' : 'Submit'}
             </button>
           </div>
         </form>
@@ -349,7 +359,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ date, setDate }) => (
         variant="outline"
         className="w-full justify-start text-left font-normal"
       >
-        <CalendarIcon className="mr-2 h-4 w-4" /> {format(date, "LLL dd, y")}
+        <CalendarIcon className="mr-2 h-4 w-4" /> {format(date, 'LLL dd, y')}
       </Button>
     </PopoverTrigger>
     <PopoverContent className="w-auto p-0" align="start">
