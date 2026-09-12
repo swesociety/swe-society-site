@@ -1,17 +1,27 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { PlusCircle, RefreshCw, Search, ShieldCheck, FileCheck2, UserCheck } from "lucide-react";
-import { SocietyFeeSemesterKey, DEFAULT_SEMESTER_FEES } from "./types";
+} from '@/components/ui/select';
+import {
+  PlusCircle,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  FileCheck2,
+  UserCheck,
+} from 'lucide-react';
+import {
+  SocietyFeeSemesterKey,
+  DEFAULT_SEMESTER_FEES,
+} from '../../../../../../components/billing/billingmanage/types';
 
 interface SocietyFeeFiltersProps {
   totalUsersCount: number;
@@ -33,7 +43,7 @@ interface SocietyFeeFiltersProps {
   readyToAcceptCount?: number;
   unverifiedInTargetCount?: number;
   batchLoading?: boolean;
-  onOpenBatchConfirm?: (action: "verify_all" | "accept_all") => void;
+  onOpenBatchConfirm?: (action: 'verify_all' | 'accept_all') => void;
 }
 
 export const SocietyFeeFilters: React.FC<SocietyFeeFiltersProps> = ({
@@ -84,13 +94,15 @@ export const SocietyFeeFilters: React.FC<SocietyFeeFiltersProps> = ({
           {canVerifyTransaction && (
             <Button
               size="sm"
-              onClick={() => onOpenBatchConfirm && onOpenBatchConfirm("verify_all")}
+              onClick={() =>
+                onOpenBatchConfirm && onOpenBatchConfirm('verify_all')
+              }
               disabled={loading || batchLoading || unverifiedCount === 0}
               className="gap-1.5 bg-emerald-800 hover:bg-emerald-700 text-white font-medium text-xs border border-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
               title={
                 unverifiedCount === 0
-                  ? "No unverified transactions to verify"
-                  : "Verify unverified society fees in bulk"
+                  ? 'No unverified transactions to verify'
+                  : 'Verify unverified society fees in bulk'
               }
             >
               <FileCheck2 className="w-3.5 h-3.5 text-emerald-300" />
@@ -101,15 +113,17 @@ export const SocietyFeeFilters: React.FC<SocietyFeeFiltersProps> = ({
           {canAcceptTransaction && (
             <Button
               size="sm"
-              onClick={() => onOpenBatchConfirm && onOpenBatchConfirm("accept_all")}
+              onClick={() =>
+                onOpenBatchConfirm && onOpenBatchConfirm('accept_all')
+              }
               disabled={isAcceptDisabled}
               className="gap-1.5 bg-indigo-800 hover:bg-indigo-700 text-white font-medium text-xs border border-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
               title={
                 unverifiedInTargetCount > 0
                   ? `${unverifiedInTargetCount} transaction(s) must be verified first before acceptance`
                   : readyToAcceptCount === 0
-                    ? "No verified pending payments to accept"
-                    : "Accept verified society fees in bulk"
+                    ? 'No verified pending payments to accept'
+                    : 'Accept verified society fees in bulk'
               }
             >
               <UserCheck className="w-3.5 h-3.5 text-indigo-300" />
@@ -135,7 +149,7 @@ export const SocietyFeeFilters: React.FC<SocietyFeeFiltersProps> = ({
             className="gap-2 border-gray-700 hover:bg-gray-800 text-gray-300 text-xs"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 ${loading || batchLoading ? "animate-spin" : ""}`}
+              className={`w-3.5 h-3.5 ${loading || batchLoading ? 'animate-spin' : ''}`}
             />
             Refresh
           </Button>
@@ -145,11 +159,11 @@ export const SocietyFeeFilters: React.FC<SocietyFeeFiltersProps> = ({
       {/* Batch Tabs */}
       <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-gray-800">
         <button
-          onClick={() => setActiveBatch("all")}
+          onClick={() => setActiveBatch('all')}
           className={`px-3 py-1.5 rounded-t-lg text-xs font-semibold whitespace-nowrap transition-all border-t border-x ${
-            activeBatch === "all"
-              ? "bg-gray-800 text-white border-gray-700 border-b-2 border-b-emerald-500"
-              : "bg-gray-900/40 text-gray-400 border-transparent hover:bg-gray-800/60 hover:text-gray-200"
+            activeBatch === 'all'
+              ? 'bg-gray-800 text-white border-gray-700 border-b-2 border-b-emerald-500'
+              : 'bg-gray-900/40 text-gray-400 border-transparent hover:bg-gray-800/60 hover:text-gray-200'
           }`}
         >
           All Batches ({totalUsersCount})
@@ -166,8 +180,8 @@ export const SocietyFeeFilters: React.FC<SocietyFeeFiltersProps> = ({
               onClick={() => setActiveBatch(b)}
               className={`px-3 py-1.5 rounded-t-lg text-xs font-semibold whitespace-nowrap transition-all border-t border-x ${
                 activeBatch === b
-                  ? "bg-emerald-950/80 text-emerald-300 border-emerald-700/80 border-b-2 border-b-emerald-400"
-                  : "bg-gray-900/40 text-gray-400 border-transparent hover:bg-gray-800/60 hover:text-gray-200"
+                  ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/80 border-b-2 border-b-emerald-400'
+                  : 'bg-gray-900/40 text-gray-400 border-transparent hover:bg-gray-800/60 hover:text-gray-200'
               }`}
             >
               {label}
@@ -199,7 +213,7 @@ export const SocietyFeeFilters: React.FC<SocietyFeeFiltersProps> = ({
                 {allSemestersList.map((semKey) => (
                   <SelectItem key={semKey} value={semKey}>
                     {semKey === SocietyFeeSemesterKey.YEAR_1
-                      ? "1/1 & 1/2 (Paired - ৳1000)"
+                      ? '1/1 & 1/2 (Paired - ৳1000)'
                       : `Semester ${semKey} (৳${DEFAULT_SEMESTER_FEES[semKey]})`}
                   </SelectItem>
                 ))}
@@ -208,7 +222,7 @@ export const SocietyFeeFilters: React.FC<SocietyFeeFiltersProps> = ({
           </div>
 
           <span className="text-xs text-gray-400">
-            Showing <strong className="text-white">{filteredUsersCount}</strong>{" "}
+            Showing <strong className="text-white">{filteredUsersCount}</strong>{' '}
             students
           </span>
         </div>

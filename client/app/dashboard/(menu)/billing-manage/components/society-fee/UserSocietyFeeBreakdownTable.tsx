@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   CheckCircle2,
@@ -6,9 +6,9 @@ import {
   FileCheck2,
   UserCheck,
   XCircle,
-} from "lucide-react";
-import { AdminProfileInfo } from "./AdminProfileDialog";
-import { UserSocietyFeeBreakdown } from "./UserSocietyFeeTypes";
+} from 'lucide-react';
+import { AdminProfileInfo } from '../../../../../../components/billing/billingmanage/AdminProfileDialog';
+import { UserSocietyFeeBreakdown } from '../../types/UserSocietyFeeTypes';
 
 interface UserSocietyFeeBreakdownTableProps {
   breakdown: UserSocietyFeeBreakdown[];
@@ -16,11 +16,11 @@ interface UserSocietyFeeBreakdownTableProps {
 }
 
 const formatDate = (iso?: string) => {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "2-digit",
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: '2-digit',
   });
 };
 
@@ -33,13 +33,13 @@ export const UserSocietyFeeBreakdownTable = ({
       <thead className="bg-gray-900 text-gray-300 border-b border-gray-800">
         <tr>
           {[
-            "#",
-            "Semester",
-            "Amount",
-            "Verification Status",
-            "Payment Status",
-            "Audited By (Admin)",
-            "Date",
+            '#',
+            'Semester',
+            'Amount',
+            'Verification Status',
+            'Payment Status',
+            'Audited By (Admin)',
+            'Date',
           ].map((heading) => (
             <th key={heading} className="p-2.5 border-r border-gray-800">
               {heading}
@@ -55,36 +55,36 @@ export const UserSocietyFeeBreakdownTable = ({
             record?.accepter_name &&
             record.verifier_name === record.accepter_name;
           const admin = (
-            type: "verifier" | "accepter",
+            type: 'verifier' | 'accepter',
             title: string,
           ): AdminProfileInfo => ({
             fullname:
-              type === "verifier"
+              type === 'verifier'
                 ? record?.verifier_name || null
                 : record?.accepter_name || null,
             regno:
-              type === "verifier"
-                ? record?.verifier_regno || "N/A"
-                : record?.accepter_regno || "N/A",
+              type === 'verifier'
+                ? record?.verifier_regno || 'N/A'
+                : record?.accepter_regno || 'N/A',
             profile_picture:
-              type === "verifier"
+              type === 'verifier'
                 ? record?.verifier_profile_picture
                 : record?.accepter_profile_picture,
             role:
-              type === "verifier"
+              type === 'verifier'
                 ? record?.verifier_role
                 : record?.accepter_role,
             committee_memberships:
-              type === "verifier"
+              type === 'verifier'
                 ? record?.verifier_committee_memberships
                 : record?.accepter_committee_memberships,
             actionTitle: title,
           });
           const rowClass = item.isFullyCleared
-            ? "bg-emerald-950/20"
+            ? 'bg-emerald-950/20'
             : item.transaction_verified
-              ? "bg-amber-950/20"
-              : "bg-rose-950/20";
+              ? 'bg-amber-950/20'
+              : 'bg-rose-950/20';
           return (
             <tr
               key={item.semester_key}
@@ -94,8 +94,8 @@ export const UserSocietyFeeBreakdownTable = ({
                 {index + 1}
               </td>
               <td className="p-2.5 border-r border-gray-800 font-semibold text-white font-sans">
-                {item.semester_key === "1/1 & 1/2"
-                  ? "1/1 & 1/2 (Paired 1st Year + Admission)"
+                {item.semester_key === '1/1 & 1/2'
+                  ? '1/1 & 1/2 (Paired 1st Year + Admission)'
                   : `Semester ${item.semester_key}`}
               </td>
               <td className="p-2.5 border-r border-gray-800 text-emerald-400 font-semibold">
@@ -115,7 +115,7 @@ export const UserSocietyFeeBreakdownTable = ({
                 )}
               </td>
               <td className="p-2.5 border-r border-gray-800 font-sans">
-                {item.payment_status === "Verified" ? (
+                {item.payment_status === 'Verified' ? (
                   <span className="inline-flex items-center gap-1 text-emerald-400 font-bold">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     Accepted
@@ -131,7 +131,7 @@ export const UserSocietyFeeBreakdownTable = ({
                 {sameAdmin ? (
                   <button
                     onClick={() =>
-                      onSelectAdmin(admin("verifier", "Verified & Accepted By"))
+                      onSelectAdmin(admin('verifier', 'Verified & Accepted By'))
                     }
                     className="inline-flex items-center gap-1 text-xs text-indigo-300 hover:text-white underline underline-offset-2"
                   >
@@ -144,7 +144,7 @@ export const UserSocietyFeeBreakdownTable = ({
                       <button
                         onClick={() =>
                           onSelectAdmin(
-                            admin("verifier", "Verified Transaction By"),
+                            admin('verifier', 'Verified Transaction By'),
                           )
                         }
                         className="text-left text-emerald-400 hover:underline"
@@ -156,7 +156,7 @@ export const UserSocietyFeeBreakdownTable = ({
                       <button
                         onClick={() =>
                           onSelectAdmin(
-                            admin("accepter", "Accepted Payment By"),
+                            admin('accepter', 'Accepted Payment By'),
                           )
                         }
                         className="text-left text-emerald-300 hover:underline"

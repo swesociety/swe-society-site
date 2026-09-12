@@ -1,21 +1,10 @@
-import React from "react";
+import React from 'react';
 
-import { AppWindowIcon, CodeIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import PaymentTypeManager from "./PaymentTypes";
-import PaymentsTable from "./AdminPaymentTable";
-import SocietyFeeTable from "./SocietyFeeTable";
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import PaymentTypeManager from './PaymentTypes';
+import PaymentsTable from './AdminPaymentTable';
+import SocietyFeeTable from '../../../app/dashboard/(menu)/billing-manage/components/society-fee/SocietyFeeTable';
 
 interface PaymentBodyProps {
   canViewPaymentType: boolean;
@@ -30,14 +19,19 @@ const PaymentBody: React.FC<PaymentBodyProps> = ({
 }) => {
   return (
     <div className="flex w-full max-w-full flex-col gap-6">
-      <Tabs defaultValue="account" className="w-full">
+      <Tabs defaultValue="fee-table" className="w-full">
         <TabsList>
+          <TabsTrigger value="fee-table">Society Fee Table</TabsTrigger>
           <TabsTrigger value="account">Payments</TabsTrigger>
           {canViewPaymentType && (
             <TabsTrigger value="password">Payment Types</TabsTrigger>
           )}
-          <TabsTrigger value="fee-table">Society Fee Table</TabsTrigger>
         </TabsList>
+        <TabsContent value="fee-table" className="w-full">
+          <Card className="w-full">
+            <SocietyFeeTable />
+          </Card>
+        </TabsContent>
         <TabsContent value="account" className="w-full">
           <Card className="w-full">
             <PaymentsTable />
@@ -49,11 +43,6 @@ const PaymentBody: React.FC<PaymentBodyProps> = ({
               canEdit={canEditPaymentType}
               canDelete={canDeletePaymentType}
             />
-          </Card>
-        </TabsContent>
-        <TabsContent value="fee-table" className="w-full">
-          <Card className="w-full">
-            <SocietyFeeTable />
           </Card>
         </TabsContent>
       </Tabs>

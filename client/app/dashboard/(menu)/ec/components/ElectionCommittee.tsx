@@ -4,10 +4,9 @@ import ElectionMemberDetails from '@/components/electiondashboard/CommmitteeMemb
 import ElectionModal from '@/components/electiondashboard/CreateElectionModal';
 import ElectionCommitteeComponent from '@/components/electiondashboard/ElectionCommitteeComponent';
 import CommitteeManagement from '@/components/electiondashboard/CommitteeManagement';
-import { APIENDPOINTS } from '@/data/urls';
-import { decryptArray, reqSalt_keys } from '@/utils/encrypt_req';
-import React, { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import type { ElectionCommittee } from '../types';
+import { getAllElections } from '../actions';
 
 type Props = {
   initialElections: ElectionCommittee[];
@@ -26,19 +25,13 @@ const ElectionCommitteeView: React.FC<Props> = ({
   const [selectedElectionId, setSelectedElectionId] = useState<number | null>(
     null,
   );
+  const [loading, startTransition] = useTransition();
 
-  const fetchData = async () => {
-    try {
-      const response = await fetch(APIENDPOINTS.election.getAllElection);
-      const raw = (await response.json()) as Record<string, string>[];
-      const decryptedElectionCommittees = decryptArray(
-        raw,
-        reqSalt_keys.election.getAllElection,
-      );
-      setElectionCommittees(decryptedElectionCommittees as ElectionCommittee[]);
-    } catch (error) {
-      console.error('Error fetching data: ', error);
-    }
+  const fetchData = () => {
+    startTransition(async () => {
+      const elections = await getAllElections();
+      setElectionCommittees(elections as ElectionCommittee[]);
+    });
   };
 
   return (
@@ -49,6 +42,7 @@ const ElectionCommitteeView: React.FC<Props> = ({
           <div className="w-full flex justify-end ">
             <button
               onClick={() => setIsModalOpen(true)}
+              disabled={loading}
               className="bg-red-700 rounded-lg px-4 mr-2"
             >
               + Add Election

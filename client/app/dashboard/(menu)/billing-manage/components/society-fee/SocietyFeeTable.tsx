@@ -1,13 +1,18 @@
-"use client";
+'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import axios from "axios";
-import { APIENDPOINTS } from "@/data/urls";
-import { headerConfig } from "@/lib/header_config";
-import { getUserID } from "@/data/cookies/getCookies";
-import { useToast } from "@/components/ui/use-toast";
-import { LockKeyhole, RefreshCw } from "lucide-react";
-import { useProfile } from "@/hooks/useProfile";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from 'react';
+import { APIENDPOINTS } from '@/data/urls';
+import { headerConfig } from '@/lib/header_config';
+import { getUserID } from '@/data/cookies/getCookies';
+import { useToast } from '@/components/ui/use-toast';
+import { LockKeyhole, RefreshCw } from 'lucide-react';
+import { useProfile } from '@/hooks/useProfile';
 
 import {
   SocietyFeeSemesterKey,
@@ -15,21 +20,29 @@ import {
   SocietyFeeRecord,
   UserSocietyFeeRow,
   SocietyFeeApiResponse,
-} from "./types";
-import { SocietyFeeFilters } from "./SocietyFeeFilters";
-import { SocietyFeeStats } from "./SocietyFeeStats";
-import { SocietyFeeMatrixTable } from "./SocietyFeeMatrixTable";
-import { TwoStepControlModal } from "./TwoStepControlModal";
-import { AdminProfileDialog, AdminProfileInfo } from "./AdminProfileDialog";
-import { ManualSocietyFeeModal } from "./ManualSocietyFeeModal";
-import { PaymentBatchConfirmModal } from "./PaymentBatchConfirmModal";
+} from '../../../../../../components/billing/billingmanage/types';
+import { SocietyFeeFilters } from './SocietyFeeFilters';
+import { SocietyFeeStats } from './SocietyFeeStats';
+import { SocietyFeeMatrixTable } from './SocietyFeeMatrixTable';
+import { TwoStepControlModal } from './TwoStepControlModal';
+import {
+  AdminProfileDialog,
+  AdminProfileInfo,
+} from '../../../../../../components/billing/billingmanage/AdminProfileDialog';
+import { ManualSocietyFeeModal } from '../../../../../../components/billing/billingmanage/ManualSocietyFeeModal';
+import { PaymentBatchConfirmModal } from '../../../../../../components/billing/billingmanage/PaymentBatchConfirmModal';
+import { batchUpdateSocietyFeeStatus, getSocietyFeeData } from '../../actions';
 
-export { SocietyFeeStatus, SemesterKey, DEFAULT_SEMESTER_FEES } from "./types";
+export {
+  SocietyFeeStatus,
+  SemesterKey,
+  DEFAULT_SEMESTER_FEES,
+} from '../../../../../../components/billing/billingmanage/types';
 export type {
   SocietyFeeRecord,
   UserSocietyFeeRow,
   SocietyFeeApiResponse,
-} from "./types";
+} from '../../../../../../components/billing/billingmanage/types';
 
 const SocietyFeeTable: React.FC = () => {
   const { toast } = useToast();
@@ -45,10 +58,11 @@ const SocietyFeeTable: React.FC = () => {
 
   const [data, setData] = useState<SocietyFeeApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isTransitioning, startTransition] = useTransition();
 
-  const [activeBatch, setActiveBatch] = useState<string>("all");
-  const [semesterFilter, setSemesterFilter] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [activeBatch, setActiveBatch] = useState<string>('all');
+  const [semesterFilter, setSemesterFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [selectedAdmin, setSelectedAdmin] = useState<AdminProfileInfo | null>(
     null,
@@ -61,24 +75,29 @@ const SocietyFeeTable: React.FC = () => {
 
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
 
-  // ── Fetch Data ─────────────────────────────────────────────────────────────
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get<SocietyFeeApiResponse>(
-        APIENDPOINTS.societyFee.getData,
-        headerConfig(),
-      );
-      setData(res.data);
-    } catch (err) {
-      toast({
-        title: "Failed to load society fee data",
-        description: "Please check backend connection.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+  const fetchData = useCallback(() => {
+    startTransition(async () => {
+      setLoading(true);
+      try {
+        const res = await getSocietyFeeData(
+          APIENDPOINTS.societyFee.getData,
+          headerConfig(),
+        );
+        if (res.status === 200) {
+          setData(res.data as SocietyFeeApiResponse);
+        } else {
+          throw new Error('Failed to load society fee data');
+        }
+      } catch (err) {
+        toast({
+          title: 'Failed to load society fee data',
+          description: 'Please check backend connection.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    });
   }, [toast]);
 
   useEffect(() => {
@@ -102,7 +121,7 @@ const SocietyFeeTable: React.FC = () => {
   }, [data]);
 
   const activeSemesters = useMemo(() => {
-    if (semesterFilter === "all") return allSemestersList;
+    if (semesterFilter === 'all') return allSemestersList;
     return allSemestersList.filter(
       (s) => s === (semesterFilter as SocietyFeeSemesterKey),
     );
@@ -112,11 +131,11 @@ const SocietyFeeTable: React.FC = () => {
     if (!data) return [];
     let users = data.users;
 
-    if (activeBatch !== "all") {
+    if (activeBatch !== 'all') {
       users = users.filter((u) => u.batch === activeBatch);
     }
 
-    if (searchQuery.trim() !== "") {
+    if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase().trim();
       users = users.filter(
         (u) =>
@@ -171,7 +190,7 @@ const SocietyFeeTable: React.FC = () => {
 
   // ── Batch Verify All & Accept All ─────────────────────────────────────────
   const [confirmBatchAction, setConfirmBatchAction] = useState<
-    "verify_all" | "accept_all" | null
+    'verify_all' | 'accept_all' | null
   >(null);
   const [batchLoading, setBatchLoading] = useState(false);
 
@@ -207,12 +226,12 @@ const SocietyFeeTable: React.FC = () => {
   const handleExecuteBatchAction = async () => {
     if (!confirmBatchAction) return;
 
-    if (confirmBatchAction === "accept_all") {
+    if (confirmBatchAction === 'accept_all') {
       if (unverifiedInTargetCount > 0) {
         toast({
-          title: "Verification Required",
+          title: 'Verification Required',
           description: `Cannot accept payments: ${unverifiedInTargetCount} society fee transaction(s) are not verified yet. Please verify all transactions first.`,
-          variant: "destructive",
+          variant: 'destructive',
         });
         setConfirmBatchAction(null);
         return;
@@ -220,59 +239,63 @@ const SocietyFeeTable: React.FC = () => {
     }
 
     const targetFeeRecords =
-      confirmBatchAction === "verify_all"
+      confirmBatchAction === 'verify_all'
         ? unverifiedRecords
         : readyToAcceptRecords;
 
     const societyFeeIds = targetFeeRecords
       .map((r) => r.society_fee_id)
-      .filter((id): id is number => typeof id === "number");
+      .filter((id): id is number => typeof id === 'number');
 
     if (societyFeeIds.length === 0) {
       toast({
-        title: "No Records Available",
+        title: 'No Records Available',
         description:
-          confirmBatchAction === "verify_all"
-            ? "All society fees in the selected scope are already verified."
-            : "No verified pending society fees available to accept in the selected scope.",
-        variant: "destructive",
+          confirmBatchAction === 'verify_all'
+            ? 'All society fees in the selected scope are already verified.'
+            : 'No verified pending society fees available to accept in the selected scope.',
+        variant: 'destructive',
       });
       setConfirmBatchAction(null);
       return;
     }
 
-    setBatchLoading(true);
-    try {
-      const res = await axios.put<{ updatedCount: number }>(
-        APIENDPOINTS.societyFee.batchUpdateStatus,
-        {
-          action: confirmBatchAction,
-          societyFeeIds,
-        },
-        headerConfig(),
-      );
+    startTransition(async () => {
+      setBatchLoading(true);
+      try {
+        const res = await batchUpdateSocietyFeeStatus(
+          APIENDPOINTS.societyFee.batchUpdateStatus,
+          {
+            action: confirmBatchAction,
+            societyFeeIds,
+          },
+          headerConfig(),
+        );
 
-      toast({
-        title: "Batch Operation Completed",
-        description: `Successfully ${
-          confirmBatchAction === "verify_all" ? "verified" : "accepted"
-        } ${res.data.updatedCount} society fee transaction(s).`,
-      });
-      fetchData();
-    } catch (err: any) {
-      console.error("Batch society fee update error:", err);
-      const errorMsg =
-        err?.response?.data?.message ||
-        "Failed to process batch society fee action.";
-      toast({
-        title: "Batch Action Failed",
-        description: errorMsg,
-        variant: "destructive",
-      });
-    } finally {
-      setBatchLoading(false);
-      setConfirmBatchAction(null);
-    }
+        if (res.status !== 200) {
+          throw new Error('Failed to process batch society fee action.');
+        }
+
+        const result = res.data as { updatedCount: number };
+        toast({
+          title: 'Batch Operation Completed',
+          description: `Successfully ${
+            confirmBatchAction === 'verify_all' ? 'verified' : 'accepted'
+          } ${result.updatedCount} society fee transaction(s).`,
+        });
+        fetchData();
+      } catch (err) {
+        console.error('Batch society fee update error:', err);
+        toast({
+          title: 'Batch Action Failed',
+          description: 'Failed to process batch society fee action.',
+          variant: 'destructive',
+        });
+      } finally {
+        setBatchLoading(false);
+        setConfirmBatchAction(null);
+      }
+    });
   };
 
   // ── Render Loading & Error States ─────────────────────────────────────────
@@ -317,20 +340,20 @@ const SocietyFeeTable: React.FC = () => {
         setSearchQuery={setSearchQuery}
         allSemestersList={allSemestersList}
         onRefresh={fetchData}
-        loading={loading}
+        loading={loading || isTransitioning}
         onOpenManualAdd={() => setIsManualModalOpen(true)}
         canVerifyTransaction={canVerifyTransaction}
         canAcceptTransaction={canAcceptTransaction}
         unverifiedCount={unverifiedCount}
         readyToAcceptCount={readyToAcceptCount}
         unverifiedInTargetCount={unverifiedInTargetCount}
-        batchLoading={batchLoading}
+        batchLoading={batchLoading || isTransitioning}
         onOpenBatchConfirm={(action) => {
-          if (action === "accept_all" && unverifiedInTargetCount > 0) {
+          if (action === 'accept_all' && unverifiedInTargetCount > 0) {
             toast({
-              title: "Verification Required",
+              title: 'Verification Required',
               description: `Cannot accept payments: ${unverifiedInTargetCount} transaction(s) are not verified yet. Please verify all transactions first.`,
-              variant: "destructive",
+              variant: 'destructive',
             });
           }
           setConfirmBatchAction(action);
@@ -389,7 +412,7 @@ const SocietyFeeTable: React.FC = () => {
         unverifiedCount={unverifiedCount}
         readyToAcceptCount={readyToAcceptCount}
         unverifiedInTargetCount={unverifiedInTargetCount}
-        batchLoading={batchLoading}
+        batchLoading={batchLoading || isTransitioning}
         onClose={() => setConfirmBatchAction(null)}
         onConfirm={handleExecuteBatchAction}
       />

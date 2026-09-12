@@ -2,13 +2,13 @@
 import { getJWT, getUserRole } from "@/data/cookies/getCookies";
 import { APIENDPOINTS } from "@/data/urls";
 import { reqSalt_keys, xorEncrypt } from "@/utils/encrypt_req";
-import axios from "axios";
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react";
 import { MdDelete, MdModeEditOutline } from "react-icons/md";
 import ConfirmationModal from "../commons/ConfirmationModal";
 import { useToast } from "../ui/use-toast";
 import ElectionModal from "./ElectionEditModal";
 import { formatDateDDMMYYYY } from "./functions";
+import { deleteElection } from "@/app/dashboard/(menu)/ec/actions";
 
 export interface ElectionCommitteeItem {
   electionid: number;
@@ -51,38 +51,39 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
   const [electioneditInfo, setelectioneditInfo] =
     useState<ElectionCommitteeItem>();
   const { toast } = useToast();
-  const handleDeleteConfirm = async () => {
+  const [loading, startTransition] = useTransition();
+  const handleDeleteConfirm = () => {
     if (editElectionId === -1) return;
-    try {
-      const encryptedElectionId = xorEncrypt(
-        editElectionId.toString(),
-        reqSalt_keys.election.deleteElection
-      );
-      const deleteUrl = `${APIENDPOINTS.election.deleteElection}/${encryptedElectionId}`;
-      const jwt = getJWT();
+    startTransition(async () => {
+      try {
+        const encryptedElectionId = xorEncrypt(
+          editElectionId.toString(),
+          reqSalt_keys.election.deleteElection,
+        );
+        const deleteUrl = `${APIENDPOINTS.election.deleteElection}/${encryptedElectionId}`;
+        const response = await deleteElection(deleteUrl, getJWT() || '');
 
-      const response = await axios.delete(deleteUrl, {
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-        },
-      });
+        if (response.status !== 200 && response.status !== 204) {
+          throw new Error('Error deleting election');
+        }
 
-      toast({
-        title: response.data?.message || "Election deleted successfully",
-        duration: 3000,
-      });
+        toast({
+          title: response.data?.message || "Election deleted successfully",
+          duration: 3000,
+        });
 
-      setOpenDeleteModal(false);
-      fetchData();
-    } catch (error: any) {
-      toast({
-        title: "Error deleting election",
-        description: error?.response?.data?.message || error.message,
-        duration: 5000,
-        variant: "destructive",
-      });
-      setOpenDeleteModal(false);
-    }
+        setOpenDeleteModal(false);
+        fetchData();
+      } catch (error) {
+        toast({
+          title: "Error deleting election",
+          description: 'Unable to delete election.',
+          duration: 5000,
+          variant: "destructive",
+        });
+        setOpenDeleteModal(false);
+      }
+    });
   };
 
   const formatDate = (dateString: string | null | undefined) => {
@@ -115,6 +116,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
                       setelectioneditInfo(election);
                       setEditElectionId(election.electionid);
                     }}
+                    disabled={loading}
                     className="p-2 rounded border border-red-300 flex items-center justify-center"
                   >
                     <MdModeEditOutline className="text-red-300 text-sm" />
@@ -125,6 +127,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
                       setEditElectionId(election.electionid);
                       setOpenDeleteModal(true);
                     }}
+                    disabled={loading}
                     className="p-2 rounded border border-red-300 flex items-center justify-center"
                   >
                     <MdDelete className="text-red-300 text-sm" />
@@ -213,6 +216,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
           subtitle="Are you sure you want to delete the election? This action cannot be undone."
           confirmButtonTitle="Delete"
           onConfirm={handleDeleteConfirm}
+          disabled={loading}
           onCancel={() => setOpenDeleteModal(false)}
         />
       )}

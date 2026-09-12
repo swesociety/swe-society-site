@@ -7,6 +7,7 @@ import { getJWT } from '@/data/cookies/getCookies';
 import { useToast } from '@/components/ui/use-toast';
 import { Achievement, FormDataType } from '../types';
 import { deleteAchievementById, updateAchievementById } from '../actions';
+import { cn } from '@/lib/utils';
 
 type Props = {
   achievements: Achievement[];
@@ -128,13 +129,13 @@ const AchievementCard: React.FC<Props> = ({
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 px-4 h-[70vh] overflow-y-scroll">
+      <div className="flex flex-col gap-2 w-full ">
         {achievements.map((achievement) => (
           <div
             key={achievement.achieveid}
-            className="p-4 border rounded-lg shadow-md relative"
+            className="p-4 border rounded-lg shadow-md relative "
           >
-            <div className="flex justify-end w-full right-10 top-5 space-x-3 absolute">
+            <div className="flex justify-end w-full right-10 top-1.5 space-x-3 absolute">
               {isAdmin && (
                 <button
                   disabled={loading}
@@ -144,7 +145,13 @@ const AchievementCard: React.FC<Props> = ({
                     setIsApproved(achievement.approval_status);
                     setApprovalStatusModal(true);
                   }}
-                  className={`p-2 ${achievement.approval_status ? 'text-gray-400 border border-gray-600 bg-gray-800' : 'bg-white text-black border border-black'}  rounded  text-xs`}
+                  className={cn(
+                    `p-2 hover:bg-gray-300 ${achievement.approval_status ? 'text-gray-400 border border-gray-600 bg-gray-800' : 'bg-white text-black border border-black'}  rounded  text-xs`,
+                    {
+                      'bg-green-600 hover:bg-green-400 text-white':
+                        achievement.approval_status,
+                    },
+                  )}
                 >
                   {achievement.approval_status ? 'Approved' : 'Approve'}
                 </button>
@@ -155,7 +162,7 @@ const AchievementCard: React.FC<Props> = ({
                   handleEditClick(achievement);
                 }}
                 disabled={loading}
-                className="p-2 rounded border bg-gray-200 border-black  flex items-center justify-center"
+                className="p-2 rounded border hover:bg-gray-300 bg-gray-200 border-black  flex items-center justify-center"
               >
                 <MdModeEditOutline className="text-black text-sm" />
               </button>
@@ -167,18 +174,18 @@ const AchievementCard: React.FC<Props> = ({
                   setOpenDeleteModal(true);
                 }}
                 disabled={loading}
-                className="p-2 rounded border bg-gray-200 border-black  flex items-center justify-center"
+                className="p-2 rounded hover:bg-gray-300  border bg-gray-200 border-black  flex items-center justify-center"
               >
-                <MdDelete className="text-black text-sm" />
+                <MdDelete className="text-red-700 " />
               </button>
             </div>
 
             {achievement.photos && achievement.photos.length > 0 && (
-              <div className="mb-4">
+              <div className="mt-7">
                 <img
                   src={achievement.photos[0]}
                   alt="Achievement"
-                  className="w-full h-auto rounded-lg"
+                  className="w-full h-60 p-2 rounded-lg object-cover"
                 />
               </div>
             )}

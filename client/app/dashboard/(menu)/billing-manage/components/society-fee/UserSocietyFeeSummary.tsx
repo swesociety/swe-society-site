@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { AlertTriangle, CheckCircle2, ShieldCheck } from "lucide-react";
-import { UserSocietyFeeResponse } from "./UserSocietyFeeTypes";
+import { AlertTriangle, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { UserSocietyFeeResponse } from '../../types/UserSocietyFeeTypes';
 
 interface UserSocietyFeeSummaryProps {
   data: UserSocietyFeeResponse;
@@ -52,7 +52,7 @@ export const UserSocietyFeeSummary = ({ data }: UserSocietyFeeSummaryProps) => (
       <div className="text-[11px] bg-amber-950/40 border border-amber-900/60 text-amber-300/90 px-3 py-1.5 rounded-md flex items-center gap-2">
         <span>ℹ️</span>
         <span>
-          <strong>2-Step Verification Rule:</strong> A semester fee remains{" "}
+          <strong>2-Step Verification Rule:</strong> A semester fee remains{' '}
           <strong>DUE</strong> until <em>both</em> Step 1 (Transaction Verified)
           and Step 2 (Payment Accepted) are completed by Admin.
         </span>

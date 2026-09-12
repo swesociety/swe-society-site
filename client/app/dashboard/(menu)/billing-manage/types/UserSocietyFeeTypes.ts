@@ -1,11 +1,11 @@
-import { SocietyFeeRecord } from "./types";
+import { SocietyFeeRecord } from '../../../../../components/billing/billingmanage/types';
 
 export interface UserSocietyFeeBreakdown {
   semester_key: string;
   default_amount: number;
   record: SocietyFeeRecord | null;
   transaction_verified: boolean;
-  payment_status: "Pending" | "Verified";
+  payment_status: 'Pending' | 'Verified';
   isFullyCleared: boolean;
   isDue: boolean;
 }

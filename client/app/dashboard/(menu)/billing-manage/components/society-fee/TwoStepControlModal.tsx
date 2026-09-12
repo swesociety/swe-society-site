@@ -1,19 +1,18 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { APIENDPOINTS } from "@/data/urls";
-import { headerConfig } from "@/lib/header_config";
-import { useToast } from "@/components/ui/use-toast";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import React, { useEffect, useState, useTransition } from 'react';
+import { APIENDPOINTS } from '@/data/urls';
+import { headerConfig } from '@/lib/header_config';
+import { useToast } from '@/components/ui/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   ShieldCheck,
   FileCheck2,
@@ -21,15 +20,16 @@ import {
   AlertTriangle,
   Edit3,
   Trash2,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   SocietyFeeSemesterKey,
   SocietyFeeStatus,
   DEFAULT_SEMESTER_FEES,
   SocietyFeeRecord,
   UserSocietyFeeRow,
-} from "./types";
-import { AdminProfileInfo } from "./AdminProfileDialog";
+} from '../../../../../../components/billing/billingmanage/types';
+import { AdminProfileInfo } from '../../../../../../components/billing/billingmanage/AdminProfileDialog';
+import { deleteSocietyFeeRecord, saveSocietyFeeRecord } from '../../actions';
 
 interface TwoStepControlModalProps {
   isOpen: boolean;
@@ -58,16 +58,16 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
 }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [isTransitioning, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
   const [editAmount, setEditAmount] = useState<number>(300);
-  const [editTxId, setEditTxId] = useState<string>("");
+  const [editTxId, setEditTxId] = useState<string>('');
 
   useEffect(() => {
     if (target) {
-      const defAmt =
-        DEFAULT_SEMESTER_FEES[target.semester_key] || 300;
+      const defAmt = DEFAULT_SEMESTER_FEES[target.semester_key] || 300;
       setEditAmount(target.record?.amount ?? defAmt);
-      setEditTxId(target.record?.transaction_id || "");
+      setEditTxId(target.record?.transaction_id || '');
       setIsEditing(false);
     }
   }, [target]);
@@ -77,8 +77,9 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
   const { user, semester_key, record } = target;
   const isTxVerified = Boolean(record?.transaction_verified);
   const isPaymentAccepted = record?.status === SocietyFeeStatus.VERIFIED;
+  const isLoading = loading || isTransitioning;
 
-  const handleUpdate = async (
+  const handleUpdate = (
     newTxVerified: boolean,
     newStatus: SocietyFeeStatus,
     customAmount?: number,
@@ -91,69 +92,73 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
 
     if (!hasPermission && !isEditing) {
       toast({
-        title: "Permission Denied",
+        title: 'Permission Denied',
         description: isVerificationUpdate
-          ? "Your assigned role cannot verify transactions."
-          : "Your assigned role cannot accept payments.",
-        variant: "destructive",
+          ? 'Your assigned role cannot verify transactions.'
+          : 'Your assigned role cannot accept payments.',
+        variant: 'destructive',
       });
       return;
     }
 
     if (newStatus === SocietyFeeStatus.VERIFIED && !newTxVerified) {
       toast({
-        title: "Verification Required",
+        title: 'Verification Required',
         description:
-          "Transaction is not verified. Please verify the transaction before accepting payment.",
-        variant: "destructive",
+          'Transaction is not verified. Please verify the transaction before accepting payment.',
+        variant: 'destructive',
       });
       return;
     }
 
-    setLoading(true);
+    startTransition(async () => {
+      setLoading(true);
+      try {
+        const res = await saveSocietyFeeRecord(
+          APIENDPOINTS.societyFee.manualSave,
+          {
+            userid: user.userid,
+            semester_key,
+            transaction_verified: newTxVerified,
+            status: newStatus,
+            amount:
+              customAmount !== undefined
+                ? customAmount
+                : record?.amount || DEFAULT_SEMESTER_FEES[semester_key],
+            transaction_id:
+              customTxId !== undefined
+                ? customTxId
+                : record?.transaction_id || null,
+          },
+          headerConfig(),
+        );
 
-    try {
-      const res = await axios.post<SocietyFeeRecord>(
-        APIENDPOINTS.societyFee.manualSave,
-        {
-          userid: user.userid,
-          semester_key,
-          transaction_verified: newTxVerified,
-          status: newStatus,
-          amount:
-            customAmount !== undefined
-              ? customAmount
-              : record?.amount || DEFAULT_SEMESTER_FEES[semester_key],
-          transaction_id:
-            customTxId !== undefined ? customTxId : record?.transaction_id || null,
-        },
-        headerConfig(),
-      );
+        if (res.status !== 200 && res.status !== 201) {
+          throw new Error('Payment is not verified or server error occurred.');
+        }
 
-      toast({
-        title: "Fee Record Updated",
-        description: `${user.fullname || user.regno} (${semester_key}) successfully updated.`,
-      });
+        toast({
+          title: 'Fee Record Updated',
+          description: `${user.fullname || user.regno} (${semester_key}) successfully updated.`,
+        });
 
-      setIsEditing(false);
-      if (res.data) {
-        onSuccess(res.data);
+        setIsEditing(false);
+        if (res.data) {
+          onSuccess(res.data as SocietyFeeRecord);
+        }
+      } catch (error) {
+        toast({
+          title: 'Update Failed',
+          description: 'Payment is not verified or server error occurred.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      const errorMsg =
-        err?.response?.data?.message ||
-        "Payment is not verified or server error occurred.";
-      toast({
-        title: "Update Failed",
-        description: errorMsg,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (
       !confirm(
         `Are you sure you want to delete the fee record for ${
@@ -164,33 +169,37 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
       return;
     }
 
-    setLoading(true);
-    try {
-      const url = record?.society_fee_id
-        ? `${APIENDPOINTS.societyFee.deleteRecord}/${record.society_fee_id}`
-        : `${APIENDPOINTS.societyFee.deleteRecord}?userid=${
-            user.userid
-          }&semester_key=${encodeURIComponent(semester_key)}`;
+    startTransition(async () => {
+      setLoading(true);
+      try {
+        const url = record?.society_fee_id
+          ? `${APIENDPOINTS.societyFee.deleteRecord}/${record.society_fee_id}`
+          : `${APIENDPOINTS.societyFee.deleteRecord}?userid=${
+              user.userid
+            }&semester_key=${encodeURIComponent(semester_key)}`;
 
-      await axios.delete(url, headerConfig());
+        const response = await deleteSocietyFeeRecord(url, headerConfig());
+        if (response.status !== 200 && response.status !== 204) {
+          throw new Error('Failed to delete fee record.');
+        }
 
-      toast({
-        title: "Fee Record Deleted",
-        description: `Society fee record for ${semester_key} deleted successfully.`,
-      });
+        toast({
+          title: 'Fee Record Deleted',
+          description: `Society fee record for ${semester_key} deleted successfully.`,
+        });
 
-      onSuccess(null);
-      onClose();
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || "Failed to delete fee record.";
-      toast({
-        title: "Delete Failed",
-        description: msg,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+        onSuccess(null);
+        onClose();
+      } catch (error) {
+        toast({
+          title: 'Delete Failed',
+          description: 'Failed to delete fee record.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    });
   };
 
   return (
@@ -207,18 +216,19 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
                 size="sm"
                 variant="ghost"
                 onClick={() => setIsEditing(!isEditing)}
+                disabled={isLoading}
                 className="h-8 px-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800"
                 title="Edit fee amount or details"
               >
                 <Edit3 className="w-3.5 h-3.5 mr-1" />
-                {isEditing ? "View" : "Edit"}
+                {isEditing ? 'View' : 'Edit'}
               </Button>
               {record && (
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={handleDelete}
-                  disabled={loading}
+                  disabled={isLoading}
                   className="h-8 px-2 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/50"
                   title="Delete society fee record"
                 >
@@ -235,7 +245,7 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
             <div className="flex justify-between border-b border-gray-800 pb-2">
               <span className="text-gray-400">Student Name:</span>
               <span className="font-semibold text-white">
-                {user.fullname || "—"}
+                {user.fullname || '—'}
               </span>
             </div>
             <div className="flex justify-between border-b border-gray-800 pb-2">
@@ -246,7 +256,7 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
               <span className="text-gray-400">Semester:</span>
               <span className="font-medium text-indigo-300">
                 {semester_key === SocietyFeeSemesterKey.YEAR_1
-                  ? "1/1 & 1/2 (Paired 1st Year)"
+                  ? '1/1 & 1/2 (Paired 1st Year)'
                   : `Semester ${semester_key}`}
               </span>
             </div>
@@ -262,6 +272,7 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
                     min={0}
                     value={editAmount}
                     onChange={(e) => setEditAmount(Number(e.target.value))}
+                    disabled={isLoading}
                     className="h-8 text-xs bg-gray-950 border-gray-700 text-white font-bold"
                   />
                 </div>
@@ -274,6 +285,7 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
                     value={editTxId}
                     onChange={(e) => setEditTxId(e.target.value)}
                     placeholder="Enter transaction ref..."
+                    disabled={isLoading}
                     className="h-8 text-xs bg-gray-950 border-gray-700 text-white font-mono"
                   />
                 </div>
@@ -282,6 +294,7 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
                     size="sm"
                     variant="ghost"
                     onClick={() => setIsEditing(false)}
+                    disabled={isLoading}
                     className="h-7 text-xs text-gray-400"
                   >
                     Cancel
@@ -296,7 +309,7 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
                         editTxId,
                       )
                     }
-                    disabled={loading}
+                    disabled={isLoading}
                     className="h-7 text-xs bg-emerald-600 hover:bg-emerald-500 text-white"
                   >
                     Save Changes
@@ -347,20 +360,21 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
                       if (record?.verifier_name) {
                         onSelectAdminProfile({
                           fullname: record.verifier_name,
-                          regno: record.verifier_regno || "N/A",
+                          regno: record.verifier_regno || 'N/A',
                           profile_picture: record.verifier_profile_picture,
                           role: record.verifier_role,
                           committee_memberships:
                             record.verifier_committee_memberships,
-                          actionTitle: "Verified Transaction By",
+                          actionTitle: 'Verified Transaction By',
                         });
                       }
                     }}
+                    disabled={isLoading}
                     className="hover:opacity-80 w-full items-center transition-opacity cursor-pointer text-left"
                   >
                     <Badge className="bg-emerald-950 text-emerald-300 border-emerald-800">
                       <FileCheck2 className="w-3 h-3 mr-1 text-emerald-400 inline" />
-                      Tx Verified by {record?.verifier_name || "Admin"}
+                      Tx Verified by {record?.verifier_name || 'Admin'}
                     </Badge>
                   </button>
                 ) : (
@@ -380,20 +394,21 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
                       if (record?.accepter_name) {
                         onSelectAdminProfile({
                           fullname: record.accepter_name,
-                          regno: record.accepter_regno || "N/A",
+                          regno: record.accepter_regno || 'N/A',
                           profile_picture: record.accepter_profile_picture,
                           role: record.accepter_role,
                           committee_memberships:
                             record.accepter_committee_memberships,
-                          actionTitle: "Accepted Payment By",
+                          actionTitle: 'Accepted Payment By',
                         });
                       }
                     }}
+                    disabled={isLoading}
                     className="hover:opacity-80 w-full items-center transition-opacity cursor-pointer text-left"
                   >
                     <Badge className="bg-emerald-950 text-emerald-300 border-emerald-800">
                       <UserCheck className="w-3 h-3 mr-1 text-emerald-400 inline" />
-                      Accepted by {record?.accepter_name || "Admin"}
+                      Accepted by {record?.accepter_name || 'Admin'}
                     </Badge>
                   </button>
                 ) : (
@@ -443,14 +458,14 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
                       : SocietyFeeStatus.PENDING,
                   )
                 }
-                disabled={loading}
+                disabled={isLoading}
                 className={
                   isTxVerified
-                    ? "border-amber-800 text-amber-300 hover:bg-amber-950 text-xs"
-                    : "border-emerald-700 bg-emerald-950/60 text-emerald-300 hover:bg-emerald-900 text-xs"
+                    ? 'border-amber-800 text-amber-300 hover:bg-amber-950 text-xs'
+                    : 'border-emerald-700 bg-emerald-950/60 text-emerald-300 hover:bg-emerald-900 text-xs'
                 }
               >
-                {isTxVerified ? "Unverify Tx" : "Verify Tx"}
+                {isTxVerified ? 'Unverify Tx' : 'Verify Tx'}
               </Button>
             </div>
           )}
@@ -479,7 +494,7 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
                     onClick={() =>
                       handleUpdate(isTxVerified, SocietyFeeStatus.PENDING)
                     }
-                    disabled={loading}
+                    disabled={isLoading}
                     className="border-amber-800 flex justify-self-end text-amber-300 hover:bg-amber-950 text-xs"
                   >
                     Set Pending
@@ -490,11 +505,11 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
               <Button
                 size="sm"
                 onClick={() => handleUpdate(true, SocietyFeeStatus.VERIFIED)}
-                disabled={loading || !isTxVerified}
+                disabled={isLoading || !isTxVerified}
                 title={
                   !isTxVerified
-                    ? "Transaction must be verified (Step 1) before payment can be accepted"
-                    : "Accept payment"
+                    ? 'Transaction must be verified (Step 1) before payment can be accepted'
+                    : 'Accept payment'
                 }
                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -509,7 +524,7 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={handleDelete}
-                disabled={loading}
+                disabled={isLoading}
                 className="text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 text-xs"
               >
                 <Trash2 className="w-3.5 h-3.5 mr-1" />
@@ -522,7 +537,7 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
               variant="ghost"
               size="sm"
               onClick={onClose}
-              disabled={loading}
+              disabled={isLoading}
               className="text-gray-400 hover:text-white text-xs"
             >
               Close
@@ -533,4 +548,3 @@ export const TwoStepControlModal: React.FC<TwoStepControlModalProps> = ({
     </Dialog>
   );
 };
-

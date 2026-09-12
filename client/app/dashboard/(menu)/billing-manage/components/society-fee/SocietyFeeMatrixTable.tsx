@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import React from "react";
-import { CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import React from 'react';
+import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import {
   SocietyFeeSemesterKey,
   SocietyFeeStatus,
   DEFAULT_SEMESTER_FEES,
   SocietyFeeRecord,
   UserSocietyFeeRow,
-} from "./types";
-import { AdminProfileInfo } from "./AdminProfileDialog";
+} from '../../../../../../components/billing/billingmanage/types';
+import { AdminProfileInfo } from '../../../../../../components/billing/billingmanage/AdminProfileDialog';
 
 interface SocietyFeeMatrixTableProps {
   sortedBatchKeys: string[];
@@ -58,7 +58,7 @@ export const SocietyFeeMatrixTable: React.FC<SocietyFeeMatrixTableProps> = ({
               >
                 <div className="text-[12px]">
                   {semKey === SocietyFeeSemesterKey.YEAR_1
-                    ? "1/1 & 1/2"
+                    ? '1/1 & 1/2'
                     : semKey}
                 </div>
                 <div className="text-[10px] text-gray-400 font-normal">
@@ -79,7 +79,7 @@ export const SocietyFeeMatrixTable: React.FC<SocietyFeeMatrixTableProps> = ({
             return (
               <React.Fragment key={batch}>
                 {/* Batch Banner Row */}
-                {activeBatch === "all" && (
+                {activeBatch === 'all' && (
                   <tr className="bg-gray-900/90 border-t border-b border-gray-800">
                     <td
                       colSpan={5 + activeSemesters.length}
@@ -95,7 +95,7 @@ export const SocietyFeeMatrixTable: React.FC<SocietyFeeMatrixTableProps> = ({
                         </span>
                         <span className="text-[11px] text-gray-400">
                           • {batchUsers.length} student
-                          {batchUsers.length !== 1 ? "s" : ""}
+                          {batchUsers.length !== 1 ? 's' : ''}
                         </span>
                       </div>
                     </td>
@@ -133,10 +133,10 @@ export const SocietyFeeMatrixTable: React.FC<SocietyFeeMatrixTableProps> = ({
                   );
                   const allCleared = rowDueAmount === 0;
                   const rowBgClass = allCleared
-                    ? "bg-emerald-950/20 hover:bg-emerald-900/30 text-gray-200"
+                    ? 'bg-emerald-950/20 hover:bg-emerald-900/30 text-gray-200'
                     : clearedCount === 0
-                      ? "bg-rose-950/20 hover:bg-rose-900/30 text-gray-200"
-                      : "bg-amber-950/15 hover:bg-amber-900/25 text-gray-200";
+                      ? 'bg-rose-950/20 hover:bg-rose-900/30 text-gray-200'
+                      : 'bg-amber-950/15 hover:bg-amber-900/25 text-gray-200';
 
                   return (
                     <tr
@@ -150,7 +150,7 @@ export const SocietyFeeMatrixTable: React.FC<SocietyFeeMatrixTableProps> = ({
 
                       {/* Name */}
                       <td className="sticky left-10 z-10 bg-gray-950 px-3 py-2 border-r border-gray-800 text-white font-sans font-medium min-w-[170px] max-w-[210px] truncate">
-                        {user.fullname || "—"}
+                        {user.fullname || '—'}
                       </td>
 
                       {/* Reg No */}
@@ -160,7 +160,7 @@ export const SocietyFeeMatrixTable: React.FC<SocietyFeeMatrixTableProps> = ({
 
                       {/* Session */}
                       <td className="sticky left-[330px] z-10 bg-gray-950 px-3 py-2 border-r border-gray-800 text-center text-gray-400 font-sans text-xs whitespace-nowrap min-w-[90px]">
-                        {user.session || "—"}
+                        {user.session || '—'}
                       </td>
 
                       {/* 7 Payment Cells with 2-Step Badges */}
@@ -190,10 +190,10 @@ export const SocietyFeeMatrixTable: React.FC<SocietyFeeMatrixTableProps> = ({
                             }
                             className={`px-2 py-1.5 text-center border-r border-gray-800/70 whitespace-nowrap cursor-pointer transition-colors ${
                               isFullyCleared
-                                ? "bg-emerald-950/40 text-emerald-300 font-medium hover:bg-emerald-800/40"
+                                ? 'bg-emerald-950/40 text-emerald-300 font-medium hover:bg-emerald-800/40'
                                 : isTxVerified
-                                  ? "bg-amber-950/40 text-amber-300 hover:bg-amber-800/40"
-                                  : "text-rose-400/60 hover:bg-rose-950/50"
+                                  ? 'bg-amber-950/40 text-amber-300 hover:bg-amber-800/40'
+                                  : 'text-rose-400/60 hover:bg-rose-950/50'
                             }`}
                             title="Click to perform 2-Step Verification"
                           >
