@@ -15,13 +15,13 @@ export type Achievement = {
   enddate: string | null;
   organizer: string | null;
   venu: string | null;
-  approval_status:boolean;
+  approval_status: boolean;
   teammembers: {
     userid: number;
     fullname: string;
     session: string;
   }[];
-}
+};
 
 export type AchievementListResponse = Achievement[];
 
@@ -42,4 +42,4 @@ export type FormDataType = {
   enddate: string;
   organizer: string;
   venu: string;
-}
+};

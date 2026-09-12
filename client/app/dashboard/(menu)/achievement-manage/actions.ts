@@ -6,7 +6,9 @@ import type { AchievementListResponse } from '@/app/dashboard/(menu)/achievement
 export const getAllAchievements =
   async (): Promise<AchievementListResponse> => {
     try {
-      const response = await fetch(APIENDPOINTS.achievement.getAllAchievement);
+      const response = await fetch(APIENDPOINTS.achievement.getAllAchievement, {
+        cache: 'no-store',
+      });
       if (!response.ok) {
         throw new Error(`Failed to fetch achievements: ${response.status}`);
       }
@@ -19,10 +21,12 @@ export const getAllAchievements =
         >;
       };
       return Array.isArray(data.achievements)
-        ? data.achievements.map(({ teamMembers, teammembers, ...achievement }) => ({
-            ...achievement,
-            teammembers: teammembers ?? teamMembers ?? [],
-          }))
+        ? data.achievements.map(
+            ({ teamMembers, teammembers, ...achievement }) => ({
+              ...achievement,
+              teammembers: teammembers ?? teamMembers ?? [],
+            }),
+          )
         : [];
     } catch (error) {
       console.error('Error fetching achievements:', error);
