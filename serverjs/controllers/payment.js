@@ -1,60 +1,69 @@
 const errorWrapper = require("../middlewares/errorWrapper.js");
 const CustomError = require("../services/CustomError.js");
-const {
-  SemesterKey,
-  createPaymentType: savePaymentType,
-  getPaymentTypeSubtype,
-  createPayment: savePayment,
-  getAllPaymentsWithAuditors,
-  updatePaymentStatusService,
-  updateBatchPaymentStatusService,
-} = require("../services/paymentService.js");
-const pool = require("../db/dbconnect.js").pool;
+const paymentService = require("../services/paymentService.js");
 const { logActivity } = require("../services/activityLogService.js");
+const { ActivityAction } = require("../services/activityActions.js");
 
 // Create Payment Type
 const createPaymentType = errorWrapper(async (req, res) => {
   const { payment_type, year, subtype, amount, method } = req.body;
   if (
     !subtype ||
-    (!Object.hasOwn(SemesterKey, subtype) &&
-      !Object.values(SemesterKey).includes(subtype))
+    (!Object.hasOwn(paymentService.SemesterKey, subtype) &&
+      !Object.values(paymentService.SemesterKey).includes(subtype))
   ) {
     throw new CustomError(
-      `Invalid semester key. Must be one of: ${Object.keys(SemesterKey).join(", ")} or ${Object.values(SemesterKey).join(", ")}`,
+      `Invalid semester key. Must be one of: ${Object.keys(paymentService.SemesterKey).join(", ")} or ${Object.values(paymentService.SemesterKey).join(", ")}`,
       400,
     );
   }
-  const paymentType = await savePaymentType({
+  const paymentType = await paymentService.createPaymentType({
     payment_type,
     year,
     subtype,
     amount,
     method,
   });
+
+  await logActivity({
+    req,
+    action: ActivityAction.PAYMENT_TYPE_CREATED,
+    category: "payment",
+    targetType: "payment_type",
+    targetId: paymentType.payment_typeid,
+    description: `Created payment type: ${payment_type} (${subtype}, year ${year})`,
+    metadata: { payment_type, year, subtype, amount },
+  });
+
   res.status(201).json(paymentType);
 }, { statusCode: 500, message: "Couldn't create payment type" });
 
 // Create Method Type
 const createMethodType = errorWrapper(async (req, res) => {
   const { method_name, transaction_account, account_holder } = req.body;
-  const { rows } = await pool.query(
-    `INSERT INTO method_types (method_name, transaction_account, account_holder)
-     VALUES ($1, $2, $3) RETURNING *`,
-    [method_name, transaction_account, account_holder]
-  );
-  res.status(201).json(rows[0]);
+  const newMethod = await paymentService.createMethodType({ method_name, transaction_account, account_holder });
+
+  await logActivity({
+    req,
+    action: ActivityAction.PAYMENT_METHOD_CREATED,
+    category: "payment",
+    targetType: "method_type",
+    targetId: newMethod.payment_methodid,
+    description: `Created payment method: ${method_name}`,
+    metadata: { method_name, transaction_account, account_holder },
+  });
+
+  res.status(201).json(newMethod);
 }, { statusCode: 500, message: "Couldn't create method type" });
 
 // Create Payment
-// Create Payment (Updated to include payment_status)
 const createPayment = errorWrapper(async (req, res) => {
     const { userId, payment_typeid, semester_key, methodid, amount, transaction_id, transaction_slip } = req.body;
-    if (!semester_key || !Object.hasOwn(SemesterKey, semester_key)) {
-      throw new CustomError(`Invalid semester key. Must be one of: ${Object.keys(SemesterKey).join(", ")}`, 400);
+    if (!semester_key || !Object.hasOwn(paymentService.SemesterKey, semester_key)) {
+      throw new CustomError(`Invalid semester key. Must be one of: ${Object.keys(paymentService.SemesterKey).join(", ")}`, 400);
     }
 
-    const paymentTypeSubtype = await getPaymentTypeSubtype(payment_typeid);
+    const paymentTypeSubtype = await paymentService.getPaymentTypeSubtype(payment_typeid);
     if (!paymentTypeSubtype) {
       throw new CustomError("Invalid payment type", 400);
     }
@@ -71,7 +80,7 @@ const createPayment = errorWrapper(async (req, res) => {
       throw new CustomError("You can only submit a payment for your own account", 403);
     }
 
-    const payment = await savePayment({
+    const payment = await paymentService.createPayment({
       userId: authenticatedUserId,
       payment_typeid,
       semester_key,
@@ -82,54 +91,94 @@ const createPayment = errorWrapper(async (req, res) => {
     });
     res.status(201).json(payment);
   }, { statusCode: 500, message: "Couldn't create payment" });
-  
-
-  
-  
 
 // Delete Payment Type
 const deletePaymentType = errorWrapper(async (req, res) => {
   const { payment_typeid } = req.params;
-  await pool.query(`DELETE FROM payment_types WHERE payment_typeid = $1`, [payment_typeid]);
+  await paymentService.deletePaymentType(payment_typeid);
+
+  await logActivity({
+    req,
+    action: ActivityAction.PAYMENT_TYPE_DELETED,
+    category: "payment",
+    targetType: "payment_type",
+    targetId: payment_typeid,
+    description: `Deleted payment type ID: ${payment_typeid}`,
+    metadata: { payment_typeid },
+  });
+
   res.status(200).json({ message: "Payment type deleted successfully" });
 }, { statusCode: 500, message: "Couldn't delete payment type" });
 
 // Delete Method Type
 const deleteMethodType = errorWrapper(async (req, res) => {
   const { payment_methodid } = req.params;
-  await pool.query(`DELETE FROM method_types WHERE payment_methodid = $1`, [payment_methodid]);
+  await paymentService.deleteMethodType(payment_methodid);
+
+  await logActivity({
+    req,
+    action: ActivityAction.PAYMENT_METHOD_DELETED,
+    category: "payment",
+    targetType: "method_type",
+    targetId: payment_methodid,
+    description: `Deleted payment method ID: ${payment_methodid}`,
+    metadata: { payment_methodid },
+  });
+
   res.status(200).json({ message: "Method type deleted successfully" });
 }, { statusCode: 500, message: "Couldn't delete method type" });
 
 // Delete Payment
 const deletePayment = errorWrapper(async (req, res) => {
   const { paymentid } = req.params;
-  await pool.query(`DELETE FROM payment WHERE paymentid = $1`, [paymentid]);
+  await paymentService.deletePayment(paymentid);
+
+  await logActivity({
+    req,
+    action: ActivityAction.PAYMENT_DELETED,
+    category: "payment",
+    targetType: "payment",
+    targetId: paymentid,
+    description: `Deleted payment ID: ${paymentid}`,
+    metadata: { paymentid },
+  });
+
   res.status(200).json({ message: "Payment deleted successfully" });
 }, { statusCode: 500, message: "Couldn't delete payment" });
-
-// Dynamic Update Function
-const dynamicUpdate = async (table, idField, idValue, updateFields) => {
-  const keys = Object.keys(updateFields);
-  const values = Object.values(updateFields);
-  if (keys.length === 0) throw new CustomError("No fields to update", 400);
-
-  const setClause = keys.map((key, index) => `${key} = $${index + 1}`).join(", ");
-  const query = `UPDATE ${table} SET ${setClause} WHERE ${idField} = $${keys.length + 1} RETURNING *`;
-  return pool.query(query, [...values, idValue]);
-};
 
 // Update Payment Type
 const updatePaymentType = errorWrapper(async (req, res) => {
   const { payment_typeid } = req.params;
-  const { rows } = await dynamicUpdate("payment_types", "payment_typeid", payment_typeid, req.body);
+  const { rows } = await paymentService.dynamicUpdate("payment_types", "payment_typeid", payment_typeid, req.body);
+
+  await logActivity({
+    req,
+    action: ActivityAction.PAYMENT_TYPE_UPDATED,
+    category: "payment",
+    targetType: "payment_type",
+    targetId: payment_typeid,
+    description: `Updated payment type ID: ${payment_typeid}`,
+    metadata: { payment_typeid, updates: req.body },
+  });
+
   res.status(200).json(rows[0]);
 }, { statusCode: 500, message: "Couldn't update payment type" });
 
 // Update Method Type
 const updateMethodType = errorWrapper(async (req, res) => {
   const { payment_methodid } = req.params;
-  const { rows } = await dynamicUpdate("method_types", "payment_methodid", payment_methodid, req.body);
+  const { rows } = await paymentService.dynamicUpdate("method_types", "payment_methodid", payment_methodid, req.body);
+
+  await logActivity({
+    req,
+    action: ActivityAction.PAYMENT_METHOD_UPDATED,
+    category: "payment",
+    targetType: "method_type",
+    targetId: payment_methodid,
+    description: `Updated payment method ID: ${payment_methodid}`,
+    metadata: { payment_methodid, updates: req.body },
+  });
+
   res.status(200).json(rows[0]);
 }, { statusCode: 500, message: "Couldn't update method type" });
 
@@ -139,7 +188,7 @@ const updatePayment = errorWrapper(async (req, res) => {
   const adminId = req.jwtPayload.userid;
   const { transaction_verified, payment_status, amount } = req.body;
 
-  const updatedRecord = await updatePaymentStatusService({
+  const updatedRecord = await paymentService.updatePaymentStatusService({
     paymentid,
     adminId,
     transaction_verified,
@@ -149,173 +198,67 @@ const updatePayment = errorWrapper(async (req, res) => {
 
   await logActivity({
     req,
-    action: payment_status ? "payment.accept" : (transaction_verified ? "payment.verify" : "payment.update"),
+    action: payment_status ? ActivityAction.PAYMENT_ACCEPTED : (transaction_verified ? ActivityAction.PAYMENT_VERIFIED : ActivityAction.PAYMENT_UPDATED),
     category: "payment",
     targetType: "payment",
     targetId: paymentid,
-    description: `Updated payment status (verified: ${transaction_verified}, accepted: ${payment_status})`,
+    description: `Payment ID: ${paymentid} — verified: ${transaction_verified}, accepted: ${payment_status}`,
     metadata: { transaction_verified, payment_status, amount }
   });
 
   res.status(200).json(updatedRecord);
 }, { statusCode: 500, message: "Couldn't update payment" });
-  
-
 
 // Get All Payment Types
 const getAllPaymentTypes = errorWrapper(async (req, res) => {
-  const { rows } = await pool.query(
-    `SELECT * FROM payment_types
-     ORDER BY created_at DESC NULLS LAST, payment_typeid DESC`,
-  );
+  const rows = await paymentService.getAllPaymentTypes();
   res.status(200).json(rows);
 }, { statusCode: 500, message: "Couldn't retrieve payment types" });
 
 const getPaymentTypesByYear = errorWrapper(async (req, res) => {
   const { year } = req.params;
-  
-  const { rows } = await pool.query(
-    `SELECT * FROM payment_types WHERE year = $1`,
-    [year]
-  );
+  const rows = await paymentService.getPaymentTypesByYear(year);
   res.status(200).json(rows);
 }, { statusCode: 500, message: "Couldn't retrieve payment types by year" });
 
 const getPaymentTypesByUserId = errorWrapper(async (req, res) => {
   const { userid } = req.params;
-  
-  const { rows } = await pool.query(
-    `SELECT * FROM payment WHERE userId = $1`,
-    [userid]
-  );
+  const rows = await paymentService.getPaymentTypesByUserId(userid);
   res.status(200).json(rows);
 }, { statusCode: 500, message: "Couldn't retrieve payment types by userid" });
 
 // Get All Method Types
 const getAllMethodTypes = errorWrapper(async (req, res) => {
-  const { rows } = await pool.query(`SELECT * FROM method_types`);
+  const rows = await paymentService.getAllMethodTypes();
   res.status(200).json(rows);
 }, { statusCode: 500, message: "Couldn't retrieve method types" });
 
 // Get Payment List by Payment Type ID
-  // Get Payment List by Payment Type ID (Now includes payment_status)
-  const getPaymentsByType = errorWrapper(async (req, res) => {
-    const { payment_typeid } = req.params;
-    
-    const { rows } = await pool.query(
-      `SELECT p.*, u.fullname, u.session, u.regno, m.method_name, p.payment_status
-       FROM payment p
-       JOIN Users u ON p.userId = u.userId
-       JOIN method_types m ON p.methodid = m.payment_methodid
-       WHERE p.payment_typeid = $1`, 
-      [payment_typeid]
-    );
-    
-    res.status(200).json(rows);
-  }, { statusCode: 500, message: "Couldn't retrieve payments" });
-
+const getPaymentsByType = errorWrapper(async (req, res) => {
+  const { payment_typeid } = req.params;
+  const rows = await paymentService.getPaymentsByType(payment_typeid);
+  res.status(200).json(rows);
+}, { statusCode: 500, message: "Couldn't retrieve payments" });
 
 // Get Method Types by Payment Type ID
 const getMethodTypesbyPaymentid = errorWrapper(async (req, res) => {
-    const { payment_typeid } = req.params;
-    
-    // Fetch method IDs from payment_types table
-    const { rows: paymentTypeRows } = await pool.query(
-      `SELECT method FROM payment_types WHERE payment_typeid = $1`,
-      [payment_typeid]
-    );
-    
-    if (paymentTypeRows.length === 0 || !paymentTypeRows[0].method) {
-      return res.status(404).json({ message: "No methods found for this payment type" });
-    }
-    
-    const methodIds = paymentTypeRows[0].method;
-    
-    // Fetch method details from method_types table
-    const { rows: methodDetails } = await pool.query(
-      `SELECT * FROM method_types WHERE payment_methodid = ANY($1::int[])`,
-      [methodIds]
-    );
-    
-    res.status(200).json(methodDetails);
-  }, { statusCode: 500, message: "Couldn't retrieve method types by payment type ID" });
+  const { payment_typeid } = req.params;
+  const methodDetails = await paymentService.getMethodTypesbyPaymentid(payment_typeid);
+  if (!methodDetails) {
+    return res.status(404).json({ message: "No methods found for this payment type" });
+  }
+  res.status(200).json(methodDetails);
+}, { statusCode: 500, message: "Couldn't retrieve method types by payment type ID" });
 
 const getAllPayments = errorWrapper(async (req, res) => {
-  const payments = await getAllPaymentsWithAuditors();
+  const payments = await paymentService.getAllPaymentsWithAuditors();
   res.status(200).json(payments);
 }, { statusCode: 500, message: "Couldn't retrieve payments" });
-  
 
 // Get Society Fee Table (all users × all payment types matrix)
 const getSocietyFeeTable = errorWrapper(async (req, res) => {
-  // Fetch only semester-wise society payment types (columns)
-  const { rows: paymentTypes } = await pool.query(
-    `SELECT payment_typeid, payment_type, year, subtype, amount
-     FROM payment_types
-     WHERE LOWER(payment_type) LIKE '%society%'
-        OR LOWER(payment_type) LIKE '%semester%'
-        OR subtype ~* '^[0-9]\/[0-9]'
-        OR subtype ILIKE '%semester%'
-        OR subtype ILIKE '%1/%' OR subtype ILIKE '%2/%' OR subtype ILIKE '%3/%' OR subtype ILIKE '%4/%'
-     ORDER BY year ASC, subtype ASC`
-  );
-
-  // If no specific society fee types matched, fallback to all payment types
-  let effectivePaymentTypes = paymentTypes;
-  if (effectivePaymentTypes.length === 0) {
-    const { rows: allPts } = await pool.query(
-      `SELECT payment_typeid, payment_type, year, subtype, amount
-       FROM payment_types
-       ORDER BY year ASC, subtype ASC`
-    );
-    effectivePaymentTypes = allPts;
-  }
-
-  // Fetch all users with their payment records
-  const { rows: users } = await pool.query(
-    `SELECT
-       u.userid,
-       u.fullname,
-       u.regno,
-       u.session,
-       LEFT(u.regno, 4) AS batch
-     FROM Users u
-     ORDER BY u.regno ASC`
-  );
-
-  // Fetch all payments
-  const { rows: payments } = await pool.query(
-    `SELECT p.paymentid, p.userid, p.payment_typeid, p.payment_status, p.created_at, p.amount
-     FROM payment p`
-  );
-
-  // Build a lookup map: { userid_paymenttypeid -> payment record }
-  const paymentMap = {};
-  for (const p of payments) {
-    const key = `${p.userid}_${p.payment_typeid}`;
-    if (!paymentMap[key] || (p.payment_status && !paymentMap[key].payment_status)) {
-      paymentMap[key] = p;
-    }
-  }
-
-  // Build user payment rows
-  const userPayments = users.map((u) => {
-    const payments_map = {};
-    for (const pt of effectivePaymentTypes) {
-      const key = `${u.userid}_${pt.payment_typeid}`;
-      payments_map[pt.payment_typeid] = paymentMap[key] || null;
-    }
-    return {
-      userid: u.userid,
-      fullname: u.fullname,
-      regno: u.regno,
-      session: u.session,
-      batch: u.batch,
-      payments: payments_map,
-    };
-  });
-
-  res.status(200).json({ paymentTypes: effectivePaymentTypes, userPayments });
+  const result = await paymentService.getSocietyFeeTable();
+  res.status(200).json(result);
 }, { statusCode: 500, message: "Couldn't retrieve society fee table" });
 
 // Batch Update Payments (Verify All / Accept All)
@@ -323,7 +266,7 @@ const updateBatchPayments = errorWrapper(async (req, res) => {
   const adminId = req.jwtPayload.userid;
   const { action, paymentIds } = req.body;
 
-  const result = await updateBatchPaymentStatusService({
+  const result = await paymentService.updateBatchPaymentStatusService({
     adminId,
     action,
     paymentIds,
@@ -331,9 +274,9 @@ const updateBatchPayments = errorWrapper(async (req, res) => {
 
   await logActivity({
     req,
-    action: `payment.batch_${action}`,
+    action: action === 'verify_all' ? ActivityAction.PAYMENT_BATCH_VERIFIED : ActivityAction.PAYMENT_BATCH_ACCEPTED,
     category: "payment",
-    description: `Batch payment action '${action}' executed on ${paymentIds?.length || 0} payments`,
+    description: `Batch payment action '${action}' on ${paymentIds?.length || 0} payment(s)`,
     metadata: { action, count: paymentIds?.length, paymentIds }
   });
 
@@ -360,4 +303,3 @@ module.exports = {
   getPaymentTypesByUserId,
   getSocietyFeeTable
 };
-

@@ -1,111 +1,83 @@
 const errorWrapper = require("../middlewares/errorWrapper.js");
-const CustomError = require("../services/CustomError.js");
-const pool = require("../db/dbconnect.js").pool;
-
-
-// Existing event handlers remain unchanged
-// ...
+const eventUpdateService = require("../services/eventUpdateService.js");
+const { logActivity } = require("../services/activityLogService.js");
+const { ActivityAction } = require("../services/activityActions.js");
 
 const createEventUpdates = errorWrapper(
   async (req, res) => {
-    const { eventid, caption, photos } = req.body
+    const { eventid, caption, photos } = req.body;
+    const result = await eventUpdateService.createEventUpdate(eventid, caption, photos);
 
-    // Ensure photos are stored as an array
-    const photosArray = photos instanceof Array ? photos : [photos]
+    await logActivity({
+      req,
+      action: ActivityAction.EVENT_UPDATE_CREATED,
+      category: "event",
+      targetType: "event_update",
+      targetId: result.event_updateid,
+      description: `Created event update for event ID: ${eventid} — ${caption}`,
+      metadata: { eventid, caption },
+    });
 
-    const {
-      rows
-    } = await pool.query(
-      "INSERT INTO Event_Updates (eventid, caption, photos) VALUES ($1, $2, $3) RETURNING *",
-      [eventid, caption, photosArray]
-    )
-
-    res.status(201).json(rows[0])
+    res.status(201).json(result);
   },
   { statusCode: 500, message: `Couldn't create event update` }
-)
+);
 
 const getAllEventUpdates = errorWrapper(
   async (req, res) => {
-    const { rows } = await pool.query("SELECT * FROM Event_Updates")
-    res.json(rows)
+    const result = await eventUpdateService.getAllEventUpdates();
+    res.json(result);
   },
   { statusCode: 500, message: `Couldn't get event updates` }
-)
+);
 
 const getEventUpdateById = errorWrapper(
   async (req, res) => {
-    const { event_updateid } = req.params
-    const {
-      rows
-    } = await pool.query(
-      "SELECT * FROM Event_Updates WHERE event_updateid = $1",
-      [event_updateid]
-    )
-
-    if (rows.length === 0) {
-      throw new CustomError("Event update not found", 404)
-    }
-
-    res.json(rows[0])
+    const { event_updateid } = req.params;
+    const result = await eventUpdateService.getEventUpdateById(event_updateid);
+    res.json(result);
   },
   { statusCode: 500, message: `Couldn't get event update by event_updateid` }
-)
+);
 
 const updateEventUpdate = errorWrapper(
   async (req, res) => {
-    const { eventid } = req.params
-    const {
-      event_creator,
-      start_time,
-      end_time,
-      headline,
-      event_details,
-      coverphoto
-    } = req.body
+    const { eventid } = req.params;
+    const result = await eventUpdateService.updateEventUpdate(eventid, req.body);
 
-    const {
-      rows
-    } = await pool.query(
-      "UPDATE Events SET event_creator = $1, start_time = $2, end_time = $3, headline = $4, event_details = $5, coverphoto = $6 WHERE eventid = $7 RETURNING *",
-      [
-        event_creator,
-        start_time,
-        end_time,
-        headline,
-        event_details,
-        coverphoto,
-        eventid
-      ]
-    )
+    await logActivity({
+      req,
+      action: ActivityAction.EVENT_UPDATE_UPDATED,
+      category: "event",
+      targetType: "event",
+      targetId: eventid,
+      description: `Updated event update for event ID: ${eventid}`,
+      metadata: { headline: req.body.headline },
+    });
 
-    if (rows.length === 0) {
-      throw new CustomError("Event not found", 404)
-    }
-
-    res.json(rows[0])
+    res.json(result);
   },
   { statusCode: 500, message: `Couldn't update event` }
-)
+);
 
 const deleteEventUpdate = errorWrapper(
   async (req, res) => {
-    const { event_updateid } = req.params
-    const {
-      rowCount
-    } = await pool.query(
-      "DELETE FROM Event_Updates WHERE event_updateid = $1",
-      [event_updateid]
-    )
+    const { event_updateid } = req.params;
+    await eventUpdateService.deleteEventUpdate(event_updateid);
 
-    if (rowCount === 0) {
-      throw new CustomError("Event update not found", 404)
-    }
+    await logActivity({
+      req,
+      action: ActivityAction.EVENT_UPDATE_DELETED,
+      category: "event",
+      targetType: "event_update",
+      targetId: event_updateid,
+      description: `Deleted event update ID: ${event_updateid}`,
+    });
 
-    res.json({ message: "Event update deleted successfully" })
+    res.json({ message: "Event update deleted successfully" });
   },
   { statusCode: 500, message: `Couldn't delete event update` }
-)
+);
 
 module.exports = {
   createEventUpdates,
@@ -113,4 +85,4 @@ module.exports = {
   getEventUpdateById,
   updateEventUpdate,
   deleteEventUpdate
-}
+};

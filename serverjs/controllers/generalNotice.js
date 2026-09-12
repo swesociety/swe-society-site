@@ -1,131 +1,84 @@
 const errorWrapper = require("../middlewares/errorWrapper.js");
-const CustomError = require("../services/CustomError.js");
-const pool = require("../db/dbconnect.js").pool;
+const noticeService = require("../services/noticeService.js");
 const { logActivity } = require("../services/activityLogService.js");
-
+const { ActivityAction } = require("../services/activityActions.js");
 
 const createNotice = errorWrapper(
   async (req, res) => {
-    const {
-      notice_provider,
-      notice_date,
-      expire_date,
-      headline,
-      notice_body,
-      picture,
-      file
-    } = req.body
-
-    const {
-      rows
-    } = await pool.query(
-      "INSERT INTO GeneralNotices (notice_provider, notice_date, expire_date, headline, notice_body, picture, file) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
-      [
-        notice_provider,
-        notice_date,
-        expire_date,
-        headline,
-        notice_body,
-        picture,
-        file
-      ]
-    )
+    const { headline, notice_date, expire_date } = req.body;
+    const newNotice = await noticeService.createNotice(req.body);
 
     await logActivity({
       req,
-      action: "notice.create",
+      action: ActivityAction.NOTICE_CREATED,
       category: "notice",
       targetType: "notice",
-      targetId: rows[0].noticeid,
+      targetId: newNotice.noticeid,
       description: `Created notice: ${headline}`,
       metadata: { headline, notice_date, expire_date }
     });
 
-    res.status(201).json(rows[0])
+    res.status(201).json(newNotice);
   },
   { statusCode: 500, message: `Couldn't create notice` }
-)
+);
 
 const getAllNotices = errorWrapper(
   async (req, res) => {
-    const { rows } = await pool.query("SELECT * FROM GeneralNotices")
-    res.json(rows)
+    const notices = await noticeService.getAllNotices();
+    res.json(notices);
   },
   { statusCode: 500, message: `Couldn't get notices` }
-)
+);
 
 const updateNotice = errorWrapper(
   async (req, res) => {
-    const { noticeId } = req.params
-    const {
-      notice_provider,
-      notice_date,
-      expire_date,
-      headline,
-      notice_body,
-      picture,
-      file
-    } = req.body
-    const {
-      rows
-    } = await pool.query(
-      "UPDATE GeneralNotices SET notice_provider = $1, notice_date = $2, expire_date = $3, headline = $4, notice_body = $5, picture = $6, file = $7 WHERE noticeId = $8 RETURNING *",
-      [
-        notice_provider,
-        notice_date,
-        expire_date,
-        headline,
-        notice_body,
-        picture,
-        file,
-        noticeId
-      ]
-    )
+    const { noticeId } = req.params;
+    const { headline } = req.body;
+    const updatedNotice = await noticeService.updateNotice(noticeId, req.body);
 
-    if (rows.length === 0) {
-      throw new CustomError("Notice not found", 404)
-    }
+    await logActivity({
+      req,
+      action: ActivityAction.NOTICE_UPDATED,
+      category: "notice",
+      targetType: "notice",
+      targetId: noticeId,
+      description: `Updated notice ID: ${noticeId} — ${headline}`,
+      metadata: { headline },
+    });
 
-    res.json(rows[0])
+    res.json(updatedNotice);
   },
   { statusCode: 500, message: `Couldn't update notice` }
-)
+);
 
 const getNoticeById = errorWrapper(
   async (req, res) => {
-    const { noticeId } = req.params
-    const {
-      rows
-    } = await pool.query("SELECT * FROM GeneralNotices WHERE noticeId = $1", [
-      noticeId
-    ])
-
-    if (rows.length === 0) {
-      throw new CustomError("Notice not found", 404)
-    }
-
-    res.json(rows[0])
+    const { noticeId } = req.params;
+    const notice = await noticeService.getNoticeById(noticeId);
+    res.json(notice);
   },
   { statusCode: 500, message: `Couldn't get notice by noticeId` }
-)
+);
 
 const deleteNotice = errorWrapper(
   async (req, res) => {
-    const { noticeId } = req.params
-    const {
-      rowCount
-    } = await pool.query("DELETE FROM GeneralNotices WHERE noticeId = $1", [
-      noticeId
-    ])
+    const { noticeId } = req.params;
+    await noticeService.deleteNotice(noticeId);
 
-    if (rowCount === 0) {
-      throw new CustomError("Notice not found", 404)
-    }
+    await logActivity({
+      req,
+      action: ActivityAction.NOTICE_DELETED,
+      category: "notice",
+      targetType: "notice",
+      targetId: noticeId,
+      description: `Deleted notice ID: ${noticeId}`,
+    });
 
-    res.json({ message: "Notice deleted successfully" })
+    res.json({ message: "Notice deleted successfully" });
   },
   { statusCode: 500, message: `Couldn't delete notice` }
-)
+);
 
 module.exports = {
   createNotice,
@@ -133,4 +86,4 @@ module.exports = {
   updateNotice,
   deleteNotice,
   getNoticeById
-}
+};

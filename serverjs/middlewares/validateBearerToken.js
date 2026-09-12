@@ -11,7 +11,8 @@ const validateBearerToken = async (req, res, next) => {
     if (decodedToken && decodedToken.userid && decodedToken.regno) {
       req.jwtPayload = {
         userid: decodedToken.userid,
-        regno: decodedToken.regno
+        regno: decodedToken.regno,
+        role: decodedToken.role ?? null,
       };
       next();
     } else {
