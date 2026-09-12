@@ -1,21 +1,22 @@
-"use client";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
-import { getUserID } from "@/data/cookies/getCookies";
-import { updateProfileCookies } from "@/data/cookies/setCookies";
-import { UserProfile } from "@/data/types";
-import { APIENDPOINTS } from "@/data/urls";
-import { headerConfig } from "@/lib/header_config";
-import { uploadImageToCloud } from "@/utils/ImageUploadService";
-import axios from "axios";
-import { CircleX, LoaderIcon, Pencil, Save } from "lucide-react";
-import React, { useState } from "react";
-import CVSection from "./CVSection";
-import EditProject from "./EditProject";
-import ProfileCard from "./ProfileCard";
-import SkillManagement from "./SkillManagement";
+'use client';
+
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import { getUserID } from '@/data/cookies/getCookies';
+import { updateProfileCookies } from '@/data/cookies/setCookies';
+import { UserProfile } from '@/data/types';
+import { APIENDPOINTS } from '@/data/urls';
+import { headerConfig } from '@/lib/header_config';
+import { uploadImageToCloud } from '@/utils/ImageUploadService';
+import axios from 'axios';
+import { CircleX, LoaderIcon, Pencil, Save } from 'lucide-react';
+import React, { useState } from 'react';
+import CVSection from './CVSection';
+import EditProject from './EditProject';
+import ProfileCard from './ProfileCard';
+import SkillManagement from './SkillManagement';
 
 interface EditProfileProps {
   values: UserProfile | undefined;
@@ -25,31 +26,31 @@ interface EditProfileProps {
 
 const defaultUserProfile: UserProfile = {
   userid: 0,
-  fullname: "",
-  email: "",
-  profile_picture: "",
-  regno: "",
-  session: "",
-  phone_number: "",
-  bio: "",
-  linkedin_id: "",
-  github_id: "",
-  stop_stalk_id: "",
-  whatsapp: "",
-  facebook_id: "",
-  blood_group: "",
-  school: "",
-  college: "",
-  hometown: "",
+  fullname: '',
+  email: '',
+  profile_picture: '',
+  regno: '',
+  session: '',
+  phone_number: '',
+  bio: '',
+  linkedin_id: '',
+  github_id: '',
+  stop_stalk_id: '',
+  whatsapp: '',
+  facebook_id: '',
+  blood_group: '',
+  school: '',
+  college: '',
+  hometown: '',
   cv: null,
   experience: null,
   projects: null,
   is_alumni: false,
-  role: "",
+  role: '',
   skills: null,
 };
 
-const bloodGroupOptions = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+const bloodGroupOptions = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 const EditProfile: React.FC<EditProfileProps> = ({
   values,
@@ -66,19 +67,19 @@ const EditProfile: React.FC<EditProfileProps> = ({
       setData((prevData) => ({ ...prevData, profile_picture: uploadedURL }));
     } catch (error) {
       toast({
-        title: "Failed to upload profile picture",
-        variant: "destructive",
+        title: 'Failed to upload profile picture',
+        variant: 'destructive',
         duration: 4000,
       });
-      console.error("Profile picture upload failed:", error);
+      console.error('Profile picture upload failed:', error);
     }
   };
 
   const handleInputChange = (
     field: keyof UserProfile,
-    value: string | React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    value: string | React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
-    const newValue = typeof value === "string" ? value : value.target.value;
+    const newValue = typeof value === 'string' ? value : value.target.value;
 
     setData((prevData) => ({ ...prevData, [field]: newValue }));
   };
@@ -98,11 +99,11 @@ const EditProfile: React.FC<EditProfileProps> = ({
         const response = await axios.put(
           `${APIENDPOINTS.users.updateUserbyID}/${getUserID()}`,
           data,
-          headerConfig()
+          headerConfig(),
         );
         if (response.status === 200) {
           toast({
-            title: "Profile Updated",
+            title: 'Profile Updated',
             duration: 4000,
           });
         }
@@ -118,8 +119,8 @@ const EditProfile: React.FC<EditProfileProps> = ({
         }
       } catch (error: any) {
         toast({
-          title: "Failed Updating Profile",
-          variant: "destructive",
+          title: 'Failed Updating Profile',
+          variant: 'destructive',
           duration: 4000,
         });
       }
@@ -139,14 +140,14 @@ const EditProfile: React.FC<EditProfileProps> = ({
               edit={true}
               className="col-span-3 mb-2"
               placeholder="Full Name"
-              onChange={(e) => handleInputChange("fullname", e)}
+              onChange={(e) => handleInputChange('fullname', e)}
             />
             <ProfileCard
               label="Registration no"
               info={data.regno}
               edit={false}
               className="col-span-3 mb-2"
-              onChange={(e) => handleInputChange("regno", e)}
+              onChange={(e) => handleInputChange('regno', e)}
             />
             <ProfileCard
               label="Session"
@@ -154,7 +155,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
               edit={true}
               placeholder="2020-21"
               className="col-span-3 mb-2"
-              onChange={(e) => handleInputChange("session", e)}
+              onChange={(e) => handleInputChange('session', e)}
             />
             <ProfileCard
               label="Email"
@@ -162,21 +163,21 @@ const EditProfile: React.FC<EditProfileProps> = ({
               edit={true}
               placeholder="abc@gmail.com"
               className="col-span-3 mb-2"
-              onChange={(e) => handleInputChange("email", e)}
+              onChange={(e) => handleInputChange('email', e)}
             />
           </div>
           <div className="flex flex-col w-full items-center">
             <div className="relative">
-                <Avatar className="w-fit h-fit p-2">
+              <Avatar className="w-fit h-fit p-2">
                 <AvatarImage
                   src={
-                  data?.profile_picture ??
-                  "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
+                    data?.profile_picture ??
+                    'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'
                   }
                   className="rounded-full border-2 border-white sm:p-2 p-1 object-cover"
-                  style={{ objectFit: "cover" }}
+                  style={{ objectFit: 'cover' }}
                 />
-                </Avatar>
+              </Avatar>
               <div className="absolute bottom-0 right-0">
                 <label className="flex items-center cursor-pointer bg-background text-primary p-2 rounded-full border-2 border-primary hover:bg-primary hover:text-white">
                   <Pencil size={20} />
@@ -207,7 +208,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
             edit={true}
             placeholder="+8801........."
             className="mb-2"
-            onChange={(e) => handleInputChange("phone_number", e)}
+            onChange={(e) => handleInputChange('phone_number', e)}
           />
           <ProfileCard
             label="WhatsApp"
@@ -215,14 +216,14 @@ const EditProfile: React.FC<EditProfileProps> = ({
             edit={true}
             placeholder="WhatsApp Number"
             className="mb-2"
-            onChange={(e) => handleInputChange("whatsapp", e)}
+            onChange={(e) => handleInputChange('whatsapp', e)}
           />
         </div>
         <p className="text-xs font-semibold">Bio</p>
         <Textarea
           value={data.bio}
           placeholder="Hi, I am ....."
-          onChange={(e) => handleInputChange("bio", e.target.value)}
+          onChange={(e) => handleInputChange('bio', e.target.value)}
           className="disabled:cursor-default disabled:opacity-100 mb-2"
         />
         <div className="grid grid-cols-2 gap-2">
@@ -232,14 +233,14 @@ const EditProfile: React.FC<EditProfileProps> = ({
             edit={true}
             placeholder="District Name"
             className="mb-2"
-            onChange={(e) => handleInputChange("hometown", e)}
+            onChange={(e) => handleInputChange('hometown', e)}
           />
           <ProfileCard
             label="Blood Group"
             info={data.blood_group}
             edit={true}
             className="mb-2"
-            onChange={(e) => handleInputChange("blood_group", e)}
+            onChange={(e) => handleInputChange('blood_group', e)}
             options={bloodGroupOptions}
           />
         </div>
@@ -250,7 +251,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
             edit={true}
             placeholder="College Name"
             className="mb-2"
-            onChange={(e) => handleInputChange("college", e)}
+            onChange={(e) => handleInputChange('college', e)}
           />
           <ProfileCard
             label="High School"
@@ -258,7 +259,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
             edit={true}
             placeholder="School Name"
             className="mb-2"
-            onChange={(e) => handleInputChange("school", e)}
+            onChange={(e) => handleInputChange('school', e)}
           />
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -267,28 +268,28 @@ const EditProfile: React.FC<EditProfileProps> = ({
             info={data.linkedin_id}
             edit={true}
             placeholder="Linkedin account URL"
-            onChange={(e) => handleInputChange("linkedin_id", e)}
+            onChange={(e) => handleInputChange('linkedin_id', e)}
           />
           <ProfileCard
             label="Github"
             info={data.github_id}
             edit={true}
             placeholder="Github account URL"
-            onChange={(e) => handleInputChange("github_id", e)}
+            onChange={(e) => handleInputChange('github_id', e)}
           />
           <ProfileCard
             label="StopStalk"
             info={data.stop_stalk_id}
             edit={true}
             placeholder="StopStalk account URL"
-            onChange={(e) => handleInputChange("stop_stalk_id", e)}
+            onChange={(e) => handleInputChange('stop_stalk_id', e)}
           />
           <ProfileCard
             label="Facebook"
             info={data.facebook_id}
             edit={true}
             placeholder="Facebook account URL"
-            onChange={(e) => handleInputChange("facebook_id", e)}
+            onChange={(e) => handleInputChange('facebook_id', e)}
           />
           <CVSection
             cv={data.cv}
@@ -313,14 +314,12 @@ const EditProfile: React.FC<EditProfileProps> = ({
       </>
       <div className="flex w-full justify-end gap-3">
         <Button
-          
           className="gap-2 bg-red-600 text-white"
           onClick={() => setUpdating(false)}
         >
           <CircleX /> Cancel
         </Button>
         <Button
-          
           className="gap-2 bg-red-600 text-white"
           disabled={saving}
           onClick={handleSave}

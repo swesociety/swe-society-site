@@ -1,14 +1,15 @@
-"use client";
-import EditProfile from "@/components/dashboardpage/profile/EditProfile";
-import ViewProfile from "@/components/dashboardpage/profile/ViewProfile";
-import { Button } from "@/components/ui/button";
+'use client';
+
+import EditProfile from '@/app/dashboard/(menu)/profile/components/EditProfile';
+import ViewProfile from '@/app/dashboard/(menu)/profile/components/ViewProfile';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -16,17 +17,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
-import { getJWT, getUserReg } from "@/data/cookies/getCookies";
-import { useProfile } from "@/hooks/useProfile";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { KeyRound, PencilLine } from "lucide-react";
-import React, { useTransition, useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { changePassword } from "../actions";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
+import { getJWT, getUserReg } from '@/data/cookies/getCookies';
+import { useProfile } from '@/hooks/useProfile';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { KeyRound, PencilLine } from 'lucide-react';
+import React, { useTransition, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { changePassword } from '../actions';
 
 const formSchema = z
   .object({
@@ -35,8 +36,8 @@ const formSchema = z
     newconf: z.string().min(8).max(20),
   })
   .refine((data) => data.newpass === data.newconf, {
-    message: "New password and confirmation password must match",
-    path: ["newconf"],
+    message: 'New password and confirmation password must match',
+    path: ['newconf'],
   });
 
 type PasswordFormValues = z.infer<typeof formSchema>;
@@ -51,9 +52,9 @@ const Profile: React.FC = () => {
   const form = useForm<PasswordFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      oldpass: "",
-      newpass: "",
-      newconf: "",
+      oldpass: '',
+      newpass: '',
+      newconf: '',
     },
   });
 
@@ -61,31 +62,31 @@ const Profile: React.FC = () => {
     startTransition(async () => {
       const response = await changePassword(
         {
-          regno: getUserReg() || "",
+          regno: getUserReg() || '',
           oldpass: values.oldpass,
           newpass: values.newpass,
         },
-        getJWT() || "",
+        getJWT() || '',
       );
 
       if (response?.status === 200 || response?.status === 201) {
         toast({
-          title: "Password Changed Successfully",
+          title: 'Password Changed Successfully',
           duration: 3000,
         });
         setDialogOpen(false);
         form.reset();
       } else if (response?.status === 404) {
         toast({
-          title: "Invalid user information",
-          description: "Login again to change password",
-          variant: "destructive",
+          title: 'Invalid user information',
+          description: 'Login again to change password',
+          variant: 'destructive',
           duration: 3000,
         });
       } else {
         toast({
-          title: "Failed to change password",
-          variant: "destructive",
+          title: 'Failed to change password',
+          variant: 'destructive',
           duration: 3000,
         });
       }
@@ -186,7 +187,7 @@ const Profile: React.FC = () => {
                     />
                     <div className="justify-end flex w-full pt-2 gap-2">
                       <Button
-                        variant={"ghost"}
+                        variant={'ghost'}
                         type="button"
                         onClick={onCancel}
                         disabled={loading}
@@ -194,7 +195,7 @@ const Profile: React.FC = () => {
                         Cancel
                       </Button>
                       <Button type="submit" disabled={loading}>
-                        {loading ? "Submitting..." : "Submit"}
+                        {loading ? 'Submitting...' : 'Submit'}
                       </Button>
                     </div>
                   </form>

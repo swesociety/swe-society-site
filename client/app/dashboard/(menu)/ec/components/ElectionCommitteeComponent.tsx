@@ -4,11 +4,11 @@ import { APIENDPOINTS } from '@/data/urls';
 import { reqSalt_keys, xorEncrypt } from '@/utils/encrypt_req';
 import React, { useState, useTransition } from 'react';
 import { MdDelete, MdModeEditOutline } from 'react-icons/md';
-import ConfirmationModal from '../commons/ConfirmationModal';
-import { useToast } from '../ui/use-toast';
+import ConfirmationModal from '../../../../../components/commons/ConfirmationModal';
+import { useToast } from '../../../../../components/ui/use-toast';
 import ElectionModal from './ElectionEditModal';
-import { formatDateDDMMYYYY } from './functions';
 import { deleteElection } from '@/app/dashboard/(menu)/ec/actions';
+import { formatDateDDMMYYYY } from '../utils';
 
 export interface ElectionCommitteeItem {
   electionid: number;

@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { MdDelete, MdModeEditOutline } from "react-icons/md";
-import ConfirmationModal from "../commons/ConfirmationModal";
-import { useToast } from "../ui/use-toast";
+import ConfirmationModal from "../../../../../components/commons/ConfirmationModal";
+import { useToast } from "../../../../../components/ui/use-toast";
 import {
   createExecutiveCommittee,
   ExecutiveCommittee,
   removeExecutiveCommittee,
   updateExecutiveCommittee,
-} from "./actions";
+} from "../../../../../components/electiondashboard/actions";
 
 interface ExecutiveCommitteesProps {
   committees: ExecutiveCommittee[];

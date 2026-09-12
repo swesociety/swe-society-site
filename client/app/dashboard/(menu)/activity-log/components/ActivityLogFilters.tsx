@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search } from "lucide-react";
-import { CATEGORIES } from "./activityLogTypes";
+import { CATEGORIES } from "../types";
 
 interface ActivityLogFiltersProps {
   isAdminView: boolean;

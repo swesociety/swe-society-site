@@ -1,32 +1,32 @@
-"use client";
+'use client';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { getJWT, getUserRole } from "@/data/cookies/getCookies";
-import { APIENDPOINTS, BACKENDURL } from "@/data/urls";
-import axios from "axios";
-import { useRouter } from "next/navigation";
+} from '@/components/ui/dropdown-menu';
+import { getJWT, getUserRole } from '@/data/cookies/getCookies';
+import { APIENDPOINTS, BACKENDURL } from '@/data/urls';
+import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
 import {
   decryptObject,
   election_status,
   reqSalt_keys,
   xorEncrypt,
-} from "@/utils/encrypt_req";
-import { encryptId } from "@/utils/encryption";
-import { useProfile } from "@/hooks/useProfile";
-import React, { useEffect, useState } from "react";
-import { BsCopy } from "react-icons/bs";
-import { MdOutlineArrowBackIos } from "react-icons/md";
-import { TiTick } from "react-icons/ti";
-import ConfirmationModal from "../commons/ConfirmationModal";
-import { useToast } from "../ui/use-toast";
-import AddCommitteeMemberModal from "./AddCommitteeMemberModal";
-import EligibleCandidate from "./EligibleCandidate";
-import ManualNomination from "./ManualNomination";
+} from '@/utils/encrypt_req';
+import { encryptId } from '@/utils/encryption';
+import { useProfile } from '@/hooks/useProfile';
+import React, { useEffect, useState } from 'react';
+import { BsCopy } from 'react-icons/bs';
+import { MdOutlineArrowBackIos } from 'react-icons/md';
+import { TiTick } from 'react-icons/ti';
+import ConfirmationModal from '../../../../../components/commons/ConfirmationModal';
+import { useToast } from '../../../../../components/ui/use-toast';
+import AddCommitteeMemberModal from './AddCommitteeMemberModal';
+import EligibleCandidate from './EligibleCandidate';
+import ManualNomination from './ManualNomination';
 
 interface Member {
   userid: number;
@@ -46,31 +46,31 @@ interface ElectionMemberDetailsProps {
 
 const electionStatusButtons = [
   {
-    title: "Pending",
+    title: 'Pending',
     state: election_status.pending,
   },
   {
-    title: "Nomination Start",
+    title: 'Nomination Start',
     state: election_status.candidate_reg_start,
   },
   {
-    title: "Nomination End",
+    title: 'Nomination End',
     state: election_status.candidate_reg_end,
   },
   {
-    title: "Voting Not Started",
+    title: 'Voting Not Started',
     state: election_status.voting_not_started,
   },
   {
-    title: "Voting Start",
+    title: 'Voting Start',
     state: election_status.voting_start,
   },
   {
-    title: "Voting End",
+    title: 'Voting End',
     state: election_status.voting_end,
   },
   {
-    title: "Finish",
+    title: 'Finish',
     state: election_status.finished,
   },
 ];
@@ -80,7 +80,7 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
   setShowFullCommitteee,
 }) => {
   const [election_state, setElection_state] =
-    useState<string>("Set Election state");
+    useState<string>('Set Election state');
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedCommitteeMember, setSelectedCommitteMember] =
@@ -88,22 +88,22 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
-  const [nominationLink, setNominationLink] = useState("");
-  const [role, setRole] = useState<string>("");
+  const [nominationLink, setNominationLink] = useState('');
+  const [role, setRole] = useState<string>('');
   const router = useRouter();
-  const [nomination_btn, setNomination_btn] = useState("Nomination Form Link");
+  const [nomination_btn, setNomination_btn] = useState('Nomination Form Link');
 
   const fetchMembers = async () => {
     try {
       const response = await axios.get(
         `${APIENDPOINTS.election.getAllMembers}/${xorEncrypt(
           electionId.toString(),
-          reqSalt_keys.election.getAllMembers
-        )}`
+          reqSalt_keys.election.getAllMembers,
+        )}`,
       );
       setMembers(response.data);
     } catch (error) {
-      console.error("Error fetching members:", error);
+      console.error('Error fetching members:', error);
     } finally {
       setLoading(false);
     }
@@ -116,21 +116,21 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
       {
         election_status: state,
       },
-      { headers: { Authorization: `Bearer ${getJWT()}` } }
+      { headers: { Authorization: `Bearer ${getJWT()}` } },
     );
   };
 
   const getNominationLink = () => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       setNominationLink(
         `${window.location.origin}/election/${encryptId(
           electionId,
-          "election_key"
-        )}/nomination`
+          'election_key',
+        )}/nomination`,
       );
     } else {
       setNominationLink(
-        `/election/${encryptId(electionId, "election_key")}/nomination`
+        `/election/${encryptId(electionId, 'election_key')}/nomination`,
       );
     }
   };
@@ -138,12 +138,12 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
     if (!nominationLink) return;
     try {
       await navigator.clipboard.writeText(nominationLink);
-      setNomination_btn("Copied");
+      setNomination_btn('Copied');
       setTimeout(() => {
-        setNomination_btn("Nomination Form Link");
+        setNomination_btn('Nomination Form Link');
       }, 2000);
     } catch (error) {
-      console.error("Failed to copy:", error);
+      console.error('Failed to copy:', error);
     }
   };
   const fetchElectionInfo = () => {
@@ -151,45 +151,45 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
       .get(
         `${APIENDPOINTS.election.getElectionbyID}/${xorEncrypt(
           electionId.toString(),
-          reqSalt_keys.election.getElectionbyID
-        )}`
+          reqSalt_keys.election.getElectionbyID,
+        )}`,
       )
       .then((response) => {
         const decryptedData = decryptObject(
           response.data,
-          reqSalt_keys.election.getElectionbyID
+          reqSalt_keys.election.getElectionbyID,
         );
-        console.log("Decrypted Data:", decryptedData.election_status);
+        console.log('Decrypted Data:', decryptedData.election_status);
         switch (decryptedData.election_status) {
           case election_status.pending:
-            setElection_state("Pending");
+            setElection_state('Pending');
             break;
           case election_status.candidate_reg_start:
-            setElection_state("Nomination Start");
+            setElection_state('Nomination Start');
             break;
           case election_status.candidate_reg_end:
-            setElection_state("Nomination End");
+            setElection_state('Nomination End');
             break;
           case election_status.voting_not_started:
-            setElection_state("Voting Not Started");
+            setElection_state('Voting Not Started');
             break;
           case election_status.voting_start:
-            setElection_state("Voting Start");
+            setElection_state('Voting Start');
             break;
           case election_status.voting_end:
-            setElection_state("Voting End");
+            setElection_state('Voting End');
             break;
           case election_status.finished:
-            setElection_state("Finished");
+            setElection_state('Finished');
             break;
 
           default:
-            setElection_state("Unknown State");
+            setElection_state('Unknown State');
             break;
         }
       })
       .catch((error) => {
-        console.error("Error fetching election info:", error);
+        console.error('Error fetching election info:', error);
       });
   };
 
@@ -199,7 +199,7 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
     fetchElectionInfo();
     fetchMembers();
     getNominationLink();
-    setRole(getUserRole() || "");
+    setRole(getUserRole() || '');
   }, [electionId]);
 
   if (loading) {
@@ -216,11 +216,11 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
           headers: {
             Authorization: `Bearer ${getJWT()}`,
           },
-        }
+        },
       );
       if (response.status === 200 || response.status === 201) {
         toast({
-          title: "Deleted Election Successfully",
+          title: 'Deleted Election Successfully',
           duration: 3000,
         });
         setOpenDeleteModal(false);
@@ -229,7 +229,7 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
         // window.location.reload();
       }
     } catch (error) {
-      console.error("Error creating election:", error);
+      console.error('Error creating election:', error);
     }
   };
 
@@ -242,7 +242,7 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
           }}
           className="text-white flex items-center space-x-3 "
         >
-          {" "}
+          {' '}
           <MdOutlineArrowBackIos className="text-white" />
           <div>Back</div>
         </button>
@@ -252,9 +252,9 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
             onClick={() => {
               const url = `/election/${encryptId(
                 electionId,
-                "nomination_key"
+                'nomination_key',
               )}/approve_nomination`;
-              window.open(url, "_blank"); // Opens in a new tab
+              window.open(url, '_blank'); // Opens in a new tab
             }}
             className="bg-red-700 rounded-lg px-4 mr-2"
           >
@@ -271,9 +271,9 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
             onClick={() => {
               const url = `/election/${encryptId(
                 electionId,
-                "election_access"
+                'election_access',
               )}/election_access`;
-              window.open(url, "_blank");
+              window.open(url, '_blank');
             }}
             className="bg-red-700 rounded-lg px-4 mr-2"
           >
@@ -285,9 +285,9 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
             onClick={() => {
               const url = `/election/${encryptId(
                 electionId,
-                "monitor_voting"
+                'monitor_voting',
               )}/monitor_voting`;
-              window.open(url, "_blank");
+              window.open(url, '_blank');
             }}
             className="bg-red-700 rounded-lg px-4 mr-2"
           >
@@ -301,7 +301,7 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
             className="flex items-center justify-center gap-x-2 bg-red-700 rounded-lg px-4 mr-2"
           >
             {nomination_btn}
-            {nomination_btn === "Nomination Form Link" ? (
+            {nomination_btn === 'Nomination Form Link' ? (
               <BsCopy />
             ) : (
               <TiTick />
@@ -312,9 +312,9 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
               onClick={() => {
                 const url = `/election/${encryptId(
                   electionId,
-                  "standing_key"
+                  'standing_key',
                 )}/standings`;
-                window.open(url, "_blank");
+                window.open(url, '_blank');
               }}
               className="bg-red-700 rounded-lg px-4 mr-2"
             >
@@ -323,8 +323,8 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
           )}
           <button
             onClick={() => {
-              const url = `/election/${encryptId(electionId, "vote_key")}/vote`;
-              window.open(url, "_blank");
+              const url = `/election/${encryptId(electionId, 'vote_key')}/vote`;
+              window.open(url, '_blank');
             }}
             className="bg-red-700 rounded-lg px-4 mr-2"
           >
@@ -343,7 +343,7 @@ const ElectionMemberDetails: React.FC<ElectionMemberDetailsProps> = ({
                   onClick={() =>
                     handle_election_state(
                       `state : ${button.title}`,
-                      button.state
+                      button.state,
                     )
                   }
                 >

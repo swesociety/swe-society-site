@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   AdminProfileDialog,
   AdminProfileInfo,
-} from "../billing/billingmanage/AdminProfileDialog";
-import { MdDelete, MdModeEditOutline } from "react-icons/md";
-import ConfirmationModal from "../commons/ConfirmationModal";
-import { useToast } from "../ui/use-toast";
+} from '../../../../../components/billing/billingmanage/AdminProfileDialog';
+import { MdDelete, MdModeEditOutline } from 'react-icons/md';
+import ConfirmationModal from '../../../../../components/commons/ConfirmationModal';
+import { useToast } from '../../../../../components/ui/use-toast';
 import {
   CommitteeElection,
   CommitteeMember,
@@ -18,7 +18,7 @@ import {
   createCommitteeMember,
   removeCommitteeMember,
   updateCommitteeMember,
-} from "./actions";
+} from '../../../../../components/electiondashboard/actions';
 
 interface CommitteeMembersProps {
   members: CommitteeMember[];
@@ -39,19 +39,19 @@ type MemberForm = {
 };
 
 const emptyMemberForm: MemberForm = {
-  userid: "",
-  postid: "",
-  electionid: "",
-  executive_committeeid: "",
-  service_start: "",
-  service_end: "",
+  userid: '',
+  postid: '',
+  electionid: '',
+  executive_committeeid: '',
+  service_start: '',
+  service_end: '',
 };
 
 const toDateTimeLocal = (value?: string | null) =>
-  value ? new Date(value).toISOString().slice(0, 16) : "";
+  value ? new Date(value).toISOString().slice(0, 16) : '';
 
 const formatServiceDate = (value?: string | null) =>
-  value ? new Date(value).toLocaleDateString("en-GB") : "Not set";
+  value ? new Date(value).toLocaleDateString('en-GB') : 'Not set';
 
 const CommitteeMembers = ({
   members,
@@ -101,19 +101,19 @@ const CommitteeMembers = ({
       !input.service_end
     ) {
       toast({
-        title: "Complete all member fields",
+        title: 'Complete all member fields',
         description:
-          "Select a member, post, and Executive Committee. Election is optional.",
-        variant: "destructive",
+          'Select a member, post, and Executive Committee. Election is optional.',
+        variant: 'destructive',
       });
       return;
     }
 
     if (new Date(input.service_end) <= new Date(input.service_start)) {
       toast({
-        title: "Invalid service period",
-        description: "Service end must be after service start.",
-        variant: "destructive",
+        title: 'Invalid service period',
+        description: 'Service end must be after service start.',
+        variant: 'destructive',
       });
       return;
     }
@@ -126,10 +126,10 @@ const CommitteeMembers = ({
     );
     if (alreadyAssigned) {
       toast({
-        title: "User already assigned",
+        title: 'User already assigned',
         description:
-          "A user can have only one post in the same Executive Committee.",
-        variant: "destructive",
+          'A user can have only one post in the same Executive Committee.',
+        variant: 'destructive',
       });
       return;
     }
@@ -145,9 +145,9 @@ const CommitteeMembers = ({
       await onRefresh();
     } catch (error: any) {
       toast({
-        title: "Could not save committee member",
+        title: 'Could not save committee member',
         description: error?.response?.data?.message || error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setIsSaving(false);
@@ -162,9 +162,9 @@ const CommitteeMembers = ({
       await onRefresh();
     } catch (error: any) {
       toast({
-        title: "Could not delete committee member",
+        title: 'Could not delete committee member',
         description: error?.response?.data?.message || error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
   };
@@ -174,7 +174,7 @@ const CommitteeMembers = ({
     setMemberForm({
       userid: String(member.userid),
       postid: String(member.postid),
-      electionid: member.electionid ? String(member.electionid) : "",
+      electionid: member.electionid ? String(member.electionid) : '',
       executive_committeeid: String(member.executive_committeeid),
       service_start: toDateTimeLocal(member.service_start),
       service_end: toDateTimeLocal(member.service_end),
@@ -184,7 +184,7 @@ const CommitteeMembers = ({
 
   const groupedMembers = members.reduce<Record<string, CommitteeMember[]>>(
     (groups, member) => {
-      const groupKey = String(member.executive_committeeid || "legacy");
+      const groupKey = String(member.executive_committeeid || 'legacy');
       groups[groupKey] = groups[groupKey] || [];
       groups[groupKey].push(member);
       return groups;
@@ -221,10 +221,10 @@ const CommitteeMembers = ({
               <tr className="bg-gray-800">
                 <th colSpan={6} className="p-2 text-left text-red-200">
                   {group[0].executive_committee_name ||
-                    "Legacy election committee"}
+                    'Legacy election committee'}
                   {group[0].executive_committee_year
                     ? ` (${group[0].executive_committee_year})`
-                    : ""}
+                    : ''}
                 </th>
               </tr>
               {group.map((member) => (
@@ -241,7 +241,7 @@ const CommitteeMembers = ({
                           fullname: member.fullname,
                           regno: member.regno,
                           profile_picture: member.profile_picture,
-                          actionTitle: "Committee Member Profile",
+                          actionTitle: 'Committee Member Profile',
                         })
                       }
                     >
@@ -251,12 +251,12 @@ const CommitteeMembers = ({
                   <td className="p-2">{member.post_name}</td>
                   <td className="p-2">
                     {member.executive_committee_name ||
-                      "Legacy election committee"}
+                      'Legacy election committee'}
                   </td>
                   <td className="p-2">
                     {member.electionid
-                      ? `${member.election_type} ${member.year}${member.batch ? ` - ${member.batch}` : ""}`
-                      : "None"}
+                      ? `${member.election_type} ${member.year}${member.batch ? ` - ${member.batch}` : ''}`
+                      : 'None'}
                   </td>
                   <td className="p-2 text-xs">
                     <div>{formatServiceDate(member.service_start)}</div>
@@ -292,8 +292,8 @@ const CommitteeMembers = ({
             <div className="mb-5 flex items-center justify-between">
               <h3 className="text-xl font-bold">
                 {editingMember
-                  ? "Edit committee member"
-                  : "Add committee member"}
+                  ? 'Edit committee member'
+                  : 'Add committee member'}
               </h3>
               <button
                 type="button"
@@ -356,7 +356,7 @@ const CommitteeMembers = ({
                 {elections.map((election) => (
                   <option key={election.electionid} value={election.electionid}>
                     {election.election_type} {election.year}
-                    {election.batch ? ` - ${election.batch}` : ""}
+                    {election.batch ? ` - ${election.batch}` : ''}
                   </option>
                 ))}
               </select>
@@ -428,10 +428,10 @@ const CommitteeMembers = ({
                   disabled={isSaving}
                 >
                   {isSaving
-                    ? "Saving..."
+                    ? 'Saving...'
                     : editingMember
-                      ? "Update member"
-                      : "Add member"}
+                      ? 'Update member'
+                      : 'Add member'}
                 </button>
               </div>
             </form>

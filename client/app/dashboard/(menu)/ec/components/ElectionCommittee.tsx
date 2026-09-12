@@ -1,9 +1,9 @@
 'use client';
 
-import ElectionMemberDetails from '@/components/electiondashboard/CommmitteeMembers';
-import ElectionModal from '@/components/electiondashboard/CreateElectionModal';
-import ElectionCommitteeComponent from '@/components/electiondashboard/ElectionCommitteeComponent';
-import CommitteeManagement from '@/components/electiondashboard/CommitteeManagement';
+import ElectionMemberDetails from '@/app/dashboard/(menu)/ec/components/CommmitteeMembers';
+import ElectionModal from '@/app/dashboard/(menu)/ec/components/CreateElectionModal';
+import ElectionCommitteeComponent from '@/app/dashboard/(menu)/ec/components/ElectionCommitteeComponent';
+import CommitteeManagement from '@/app/dashboard/(menu)/ec/components/CommitteeManagement';
 import React, { useState, useTransition } from 'react';
 import type { ElectionCommittee } from '../types';
 import { getAllElections } from '../actions';
@@ -52,7 +52,7 @@ const ElectionCommitteeView: React.FC<Props> = ({
           <ElectionCommitteeComponent
             fetchData={fetchData}
             electionCommittees={
-              electionCommittees as unknown as import('@/components/electiondashboard/ElectionCommitteeComponent').ElectionCommitteeItem[]
+              electionCommittees as unknown as import('@/app/dashboard/(menu)/ec/components/ElectionCommitteeComponent').ElectionCommitteeItem[]
             }
             setShowFullCommitteee={setShowFullCommitteee}
             setSelectedElectionId={setSelectedElectionId}

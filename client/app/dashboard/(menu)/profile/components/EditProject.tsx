@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { LucideLink, Plus, Trash2, ExternalLink } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { LucideLink, Plus, Trash2, ExternalLink } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface EditProjectProps {
   projects: string[] | null;
@@ -15,11 +15,11 @@ const EditProject: React.FC<EditProjectProps> = ({
   projects = [],
   edit = false,
   onChange,
-  className
+  className,
 }) => {
-  const [newProject, setNewProject] = useState("");
+  const [newProject, setNewProject] = useState('');
   const [showInput, setShowInput] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   const validateUrl = (url: string) => {
     try {
@@ -32,29 +32,30 @@ const EditProject: React.FC<EditProjectProps> = ({
 
   const handleAddProject = () => {
     if (!newProject.trim()) {
-      setError("Please enter a project URL");
+      setError('Please enter a project URL');
       return;
     }
 
     if (!validateUrl(newProject)) {
-      setError("Please enter a valid URL");
+      setError('Please enter a valid URL');
       return;
     }
 
     if (projects?.includes(newProject)) {
-      setError("This project URL already exists");
+      setError('This project URL already exists');
       return;
     }
 
     const updatedProjects = [...(projects || []), newProject];
     onChange?.(updatedProjects);
-    setNewProject("");
+    setNewProject('');
     setShowInput(false);
-    setError("");
+    setError('');
   };
 
   const handleRemoveProject = (projectToRemove: string) => {
-    const updatedProjects = projects?.filter(project => project !== projectToRemove) || [];
+    const updatedProjects =
+      projects?.filter((project) => project !== projectToRemove) || [];
     onChange?.(updatedProjects);
   };
 
@@ -64,13 +65,13 @@ const EditProject: React.FC<EditProjectProps> = ({
       handleAddProject();
     } else if (e.key === 'Escape') {
       setShowInput(false);
-      setNewProject("");
-      setError("");
+      setNewProject('');
+      setError('');
     }
   };
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold">Projects</p>
         {edit && !showInput && (
@@ -93,23 +94,17 @@ const EditProject: React.FC<EditProjectProps> = ({
               value={newProject}
               onChange={(e) => {
                 setNewProject(e.target.value);
-                setError("");
+                setError('');
               }}
               onKeyDown={handleKeyPress}
               placeholder="Enter project URL"
               className="text-sm"
             />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddProject}
-            >
+            <Button variant="outline" size="sm" onClick={handleAddProject}>
               Add
             </Button>
           </div>
-          {error && (
-            <p className="text-xs text-destructive">{error}</p>
-          )}
+          {error && <p className="text-xs text-destructive">{error}</p>}
         </div>
       )}
 
@@ -121,8 +116,8 @@ const EditProject: React.FC<EditProjectProps> = ({
               className="flex items-center gap-2 p-2 rounded-md bg-accent/50 group"
             >
               <LucideLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              
-              <a 
+
+              <a
                 href={project}
                 target="_blank"
                 rel="noopener noreferrer"

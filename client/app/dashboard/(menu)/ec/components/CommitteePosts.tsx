@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { MdDelete, MdModeEditOutline } from "react-icons/md";
-import ConfirmationModal from "../commons/ConfirmationModal";
-import { useToast } from "../ui/use-toast";
+import { useState } from 'react';
+import { MdDelete, MdModeEditOutline } from 'react-icons/md';
+import ConfirmationModal from '../../../../../components/commons/ConfirmationModal';
+import { useToast } from '../../../../../components/ui/use-toast';
 import {
   CommitteePost,
   createCommitteePost,
   removeCommitteePost,
   updateCommitteePost,
-} from "./actions";
+} from '../../../../../components/electiondashboard/actions';
 
 interface CommitteePostsProps {
   posts: CommitteePost[];
@@ -17,7 +17,7 @@ interface CommitteePostsProps {
 }
 
 const CommitteePosts = ({ posts, onRefresh }: CommitteePostsProps) => {
-  const [postName, setPostName] = useState("");
+  const [postName, setPostName] = useState('');
   const [editingPost, setEditingPost] = useState<CommitteePost | null>(null);
   const [deletingPost, setDeletingPost] = useState<CommitteePost | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,7 +25,7 @@ const CommitteePosts = ({ posts, onRefresh }: CommitteePostsProps) => {
 
   const resetForm = () => {
     setEditingPost(null);
-    setPostName("");
+    setPostName('');
     setIsModalOpen(false);
   };
 
@@ -44,9 +44,9 @@ const CommitteePosts = ({ posts, onRefresh }: CommitteePostsProps) => {
       await onRefresh();
     } catch (error: any) {
       toast({
-        title: "Could not save committee post",
+        title: 'Could not save committee post',
         description: error?.response?.data?.message || error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
   };
@@ -59,9 +59,9 @@ const CommitteePosts = ({ posts, onRefresh }: CommitteePostsProps) => {
       await onRefresh();
     } catch (error: any) {
       toast({
-        title: "Could not delete committee post",
+        title: 'Could not delete committee post',
         description: error?.response?.data?.message || error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
   };
@@ -110,7 +110,7 @@ const CommitteePosts = ({ posts, onRefresh }: CommitteePostsProps) => {
           <div className="w-full max-w-md rounded-lg border border-gray-700 bg-gray-900 p-6">
             <div className="mb-5 flex items-center justify-between">
               <h3 className="text-xl font-bold">
-                {editingPost ? "Edit committee post" : "Add committee post"}
+                {editingPost ? 'Edit committee post' : 'Add committee post'}
               </h3>
               <button
                 type="button"
@@ -139,7 +139,7 @@ const CommitteePosts = ({ posts, onRefresh }: CommitteePostsProps) => {
                   Cancel
                 </button>
                 <button className="rounded bg-red-700 px-4 py-2" type="submit">
-                  {editingPost ? "Update post" : "Add post"}
+                  {editingPost ? 'Update post' : 'Add post'}
                 </button>
               </div>
             </form>

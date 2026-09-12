@@ -1,10 +1,11 @@
-"use client";
-import { getJWT } from "@/data/cookies/getCookies";
-import { BACKENDURL } from "@/data/urls";
-import axios from "axios";
-import React, { useEffect, useState } from "react";
-import toast, { Toaster } from "react-hot-toast";
-import Select from "react-select";
+'use client';
+
+import { getJWT } from '@/data/cookies/getCookies';
+import { BACKENDURL } from '@/data/urls';
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
+import Select from 'react-select';
 
 interface UserResponse {
   userid: number;
@@ -58,7 +59,7 @@ const AddCommitteeMemberModal: React.FC<{
         }));
         setUserList(mappedUsers);
       } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error('Error fetching users:', error);
       }
     };
 
@@ -73,7 +74,7 @@ const AddCommitteeMemberModal: React.FC<{
         }));
         setPostList(mappedPosts);
       } catch (error) {
-        console.error("Error fetching posts:", error);
+        console.error('Error fetching posts:', error);
       }
     };
 
@@ -84,7 +85,7 @@ const AddCommitteeMemberModal: React.FC<{
   const handleSelectChange = (
     selectedOption: any,
     index: number,
-    field: "userid" | "postid"
+    field: 'userid' | 'postid',
   ) => {
     const updatedMembers = [...members];
     updatedMembers[index][field] = selectedOption ? selectedOption.value : 0;
@@ -113,7 +114,7 @@ const AddCommitteeMemberModal: React.FC<{
             headers: {
               Authorization: `Bearer ${getJWT()}`,
             },
-          }
+          },
         );
 
         // Handle response for each member (optional)
@@ -123,12 +124,12 @@ const AddCommitteeMemberModal: React.FC<{
       }
 
       // Show success message after all requests are completed
-      toast.success("Committee Members added successfully.");
+      toast.success('Committee Members added successfully.');
       onClose();
       fetchMembers();
     } catch (error) {
-      console.error("Error adding members:", error);
-      toast.error("Failed to add members.");
+      console.error('Error adding members:', error);
+      toast.error('Failed to add members.');
     }
   };
 
@@ -161,7 +162,7 @@ const AddCommitteeMemberModal: React.FC<{
                   <Select
                     options={userList}
                     onChange={(selectedOption) =>
-                      handleSelectChange(selectedOption, index, "userid")
+                      handleSelectChange(selectedOption, index, 'userid')
                     }
                     className="border rounded w-full text-gray-800 bg-gray-100 leading-tight focus:outline-none"
                   />
@@ -171,7 +172,7 @@ const AddCommitteeMemberModal: React.FC<{
                   <Select
                     options={postList}
                     onChange={(selectedOption) =>
-                      handleSelectChange(selectedOption, index, "postid")
+                      handleSelectChange(selectedOption, index, 'postid')
                     }
                     className="border rounded w-full text-gray-800 bg-gray-100 leading-tight focus:outline-none"
                   />

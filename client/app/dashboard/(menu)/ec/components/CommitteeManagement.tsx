@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { RefreshCw } from "lucide-react";
-import { useToast } from "../ui/use-toast";
-import CommitteeMembers from "./CommitteeMembers";
-import CommitteePosts from "./CommitteePosts";
-import ExecutiveCommittees from "./ExecutiveCommittees";
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
+import { RefreshCw } from 'lucide-react';
+import { useToast } from '../../../../../components/ui/use-toast';
+import CommitteeMembers from './CommitteeMembers';
+import CommitteePosts from './CommitteePosts';
+import ExecutiveCommittees from './ExecutiveCommittees';
 import {
   CommitteeData,
   ExecutiveCommittee,
   getCommitteeData,
   getExecutiveCommittees,
-} from "./actions";
+} from '../../../../../components/electiondashboard/actions';
 
 const emptyCommitteeData: CommitteeData = {
   posts: [],
@@ -40,9 +40,9 @@ const CommitteeManagement = () => {
       setExecutiveCommittees(executiveCommitteesResponse);
     } catch (error: any) {
       toast({
-        title: "Could not load committee data",
+        title: 'Could not load committee data',
         description: error?.response?.data?.message || error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);

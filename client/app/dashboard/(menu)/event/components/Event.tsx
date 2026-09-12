@@ -1,6 +1,6 @@
 'use client';
 
-import EventCard from '@/components/dashboardpage/event/EventCard';
+import EventCard from '@/app/dashboard/(menu)/event/components/EventCard';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { EventType } from '@/data/types';

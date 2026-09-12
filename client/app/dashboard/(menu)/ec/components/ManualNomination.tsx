@@ -1,11 +1,11 @@
-import { getJWT } from "@/data/cookies/getCookies";
-import { APIENDPOINTS } from "@/data/urls";
-import { encryptObject, reqSalt_keys } from "@/utils/encrypt_req";
-import { uploadImageToCloud } from "@/utils/ImageUploadService"; // Assuming this returns a Promise<string>
-import axios from "axios";
-import Image from "next/image";
-import { useEffect, useState } from "react";
-import Select from "react-select";
+import { getJWT } from '@/data/cookies/getCookies';
+import { APIENDPOINTS } from '@/data/urls';
+import { encryptObject, reqSalt_keys } from '@/utils/encrypt_req';
+import { uploadImageToCloud } from '@/utils/ImageUploadService'; // Assuming this returns a Promise<string>
+import axios from 'axios';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
+import Select from 'react-select';
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../ui/dialog";
-import { toast } from "../ui/use-toast";
+} from '../../../../../components/ui/dialog';
+import { toast } from '../../../../../components/ui/use-toast';
 
 interface Member {
   userid: number;
@@ -58,11 +58,11 @@ function ManualNomination({ electionId }: ManualNominationProps) {
       }));
       setPostList(mappedPosts);
     } catch (error) {
-      console.error("Error fetching members or posts:", error);
+      console.error('Error fetching members or posts:', error);
       toast({
-        title: "Error fetching data",
-        description: "Could not load necessary data for the form.",
-        variant: "destructive",
+        title: 'Error fetching data',
+        description: 'Could not load necessary data for the form.',
+        variant: 'destructive',
         duration: 3000,
       });
     }
@@ -76,9 +76,9 @@ function ManualNomination({ electionId }: ManualNominationProps) {
   const [formData, setFormData] = useState({
     electionId: electionId,
     userid: 0,
-    marka_name: "",
-    slogan: "",
-    logo_url: "", // This will be set after image upload
+    marka_name: '',
+    slogan: '',
+    logo_url: '', // This will be set after image upload
     committeepostid: -1,
     request_approval_status: false, // Changed to boolean
   });
@@ -89,9 +89,9 @@ function ManualNomination({ electionId }: ManualNominationProps) {
     setFormData({
       electionId: electionId,
       userid: 0,
-      marka_name: "",
-      slogan: "",
-      logo_url: "",
+      marka_name: '',
+      slogan: '',
+      logo_url: '',
       committeepostid: -1,
       request_approval_status: false,
     });
@@ -108,7 +108,7 @@ function ManualNomination({ electionId }: ManualNominationProps) {
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -133,20 +133,20 @@ function ManualNomination({ electionId }: ManualNominationProps) {
     e.preventDefault(); // Prevent default form submission behavior
     setDisabled(true);
 
-    console.log("Form Data before submission:", formData);
+    console.log('Form Data before submission:', formData);
 
     // Frontend validation
     if (
-      formData.marka_name.trim() === "" ||
-      formData.slogan.trim() === "" ||
+      formData.marka_name.trim() === '' ||
+      formData.slogan.trim() === '' ||
       formData.userid === 0 ||
       formData.committeepostid === -1 ||
       file === null
     ) {
       toast({
-        title: "Validation Error",
-        description: "Please fill all required fields and upload a logo.",
-        variant: "destructive",
+        title: 'Validation Error',
+        description: 'Please fill all required fields and upload a logo.',
+        variant: 'destructive',
         duration: 3000,
       });
       setDisabled(false);
@@ -169,20 +169,20 @@ function ManualNomination({ electionId }: ManualNominationProps) {
 
       const encryptedData = encryptObject(
         final_formData,
-        reqSalt_keys.candidate.createcandidate
+        reqSalt_keys.candidate.createcandidate,
       );
 
       const res = await axios.post(
         APIENDPOINTS.candidate.createNomination,
         encryptedData,
-        { headers: { Authorization: `Bearer ${getJWT()}` } }
+        { headers: { Authorization: `Bearer ${getJWT()}` } },
       );
 
       // Only 2xx status codes reach here for a successful response
       if (res.status === 201) {
         toast({
-          title: "Success",
-          description: "Your nomination has been submitted.",
+          title: 'Success',
+          description: 'Your nomination has been submitted.',
           duration: 3000,
         });
         // clearform is now called by handleDialogOpenChange when dialog closes
@@ -190,45 +190,45 @@ function ManualNomination({ electionId }: ManualNominationProps) {
       }
     } catch (error: any) {
       // Type 'error' as 'any' or 'AxiosError' for better error handling
-      console.error("Error submitting nomination:", error);
+      console.error('Error submitting nomination:', error);
 
       if (axios.isAxiosError(error) && error.response) {
         // Handle specific API error responses
         if (error.response.status === 409) {
           toast({
-            title: "Already registered",
+            title: 'Already registered',
             description:
               error.response.data.message ||
-              "You have already submitted a nomination for this election.",
-            variant: "destructive",
+              'You have already submitted a nomination for this election.',
+            variant: 'destructive',
             duration: 3000,
           });
         } else if (error.response.status === 400) {
           toast({
-            title: "Invalid Input",
+            title: 'Invalid Input',
             description:
               error.response.data.message ||
-              "Invalid user or election information. Please check your inputs.",
-            variant: "destructive",
+              'Invalid user or election information. Please check your inputs.',
+            variant: 'destructive',
             duration: 3000,
           });
         } else {
           toast({
-            title: "Submission Failed",
+            title: 'Submission Failed',
             description:
               error.response.data.message ||
-              "An unexpected error occurred. Please try again.",
-            variant: "destructive",
+              'An unexpected error occurred. Please try again.',
+            variant: 'destructive',
             duration: 3000,
           });
         }
       } else {
         // Handle network errors or other unexpected errors
         toast({
-          title: "Submission Failed",
+          title: 'Submission Failed',
           description:
-            "Failed to submit nomination. Please check your internet connection and try again.",
-          variant: "destructive",
+            'Failed to submit nomination. Please check your internet connection and try again.',
+          variant: 'destructive',
           duration: 3000,
         });
       }
@@ -271,11 +271,11 @@ function ManualNomination({ electionId }: ManualNominationProps) {
                           value: formData.userid,
                           label:
                             members.find(
-                              (member) => member.userid === formData.userid
+                              (member) => member.userid === formData.userid,
                             )?.fullname +
                             ` (${
                               members.find(
-                                (member) => member.userid === formData.userid
+                                (member) => member.userid === formData.userid,
                               )?.regno
                             })`,
                         }
@@ -333,7 +333,7 @@ function ManualNomination({ electionId }: ManualNominationProps) {
                 onChange={handleSelectChange}
                 value={
                   postList.find(
-                    (post) => post.value === formData.committeepostid
+                    (post) => post.value === formData.committeepostid,
                   ) || null
                 }
                 className="border rounded w-full text-gray-800 bg-gray-100 leading-tight focus:outline-none"
@@ -347,7 +347,7 @@ function ManualNomination({ electionId }: ManualNominationProps) {
                 type="submit"
                 disabled={disabled}
                 className={`bg-red-600 text-white rounded px-4 py-2 ${
-                  disabled ? "opacity-50 cursor-not-allowed" : ""
+                  disabled ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
                 Submit
