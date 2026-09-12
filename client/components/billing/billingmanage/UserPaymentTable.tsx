@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
-import { getUserID } from "@/data/cookies/getCookies";
-import { headerConfig } from "@/lib/header_config";
-import { APIENDPOINTS } from "@/data/urls";
-import { X } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import { UserSocietyFeeCard } from "./UserSocietyFeeCard";
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { format } from 'date-fns';
+import { getUserID } from '@/data/cookies/getCookies';
+import { headerConfig } from '@/lib/header_config';
+import { APIENDPOINTS } from '@/data/urls';
+import { X } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { UserSocietyFeeCard } from '../../../app/dashboard/(menu)/billing-manage/components/society-fee/UserSocietyFeeCard';
 
 type Payment = {
   paymentid: number;
@@ -39,7 +39,7 @@ const UserPaymentsTable: React.FC = () => {
       );
       setPayments(res.data);
     } catch (err) {
-      console.error("Error fetching payments:", err);
+      console.error('Error fetching payments:', err);
     }
   };
 
@@ -57,11 +57,11 @@ const UserPaymentsTable: React.FC = () => {
       setConfirmDeleteId(null);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Deleting error.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Deleting error.',
+        variant: 'destructive',
       });
-      console.error("Error deleting payment:", error);
+      console.error('Error deleting payment:', error);
     }
   };
 
@@ -107,7 +107,7 @@ const UserPaymentsTable: React.FC = () => {
                       )}
                     </td>
                     <td className="p-2 border">
-                      {format(new Date(payment.created_at), "dd/MM/yyyy")}
+                      {format(new Date(payment.created_at), 'dd/MM/yyyy')}
                     </td>
                     <td className="p-2 border">
                       {payment.transaction_slip ? (

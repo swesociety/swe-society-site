@@ -1,4 +1,3 @@
-import Achievement from "@/app/dashboard/[menuitem]/_pages/Achievement";
 import { HomeAchievementCard } from "../achievementspage/homeAchievementCard";
 import Link from "next/link";
 import { Button } from "../ui/button";

@@ -1,222 +1,135 @@
 const errorWrapper = require("../middlewares/errorWrapper.js");
 const CustomError = require("../services/CustomError.js");
-const pool = require("../db/dbconnect.js").pool;
 const { logActivity } = require("../services/activityLogService.js");
+const { ActivityAction } = require("../services/activityActions.js");
+const blogSvc = require("../services/blogService.js");
 
 
 // Create a new blog
 const createBlog = errorWrapper(
   async (req, res) => {
-    const {
-      userid,
-      headline,
-      designation,
-      current_institution,
-      article,
-      photos,
-      blogtype,
-      approval_status
-    } = req.body
+    const { userid, headline, designation, current_institution, article, photos, blogtype, approval_status } = req.body;
+    const blog = await blogSvc.createBlog({ userid, headline, designation, current_institution, article, photos, blogtype, approval_status });
 
-    const { rows } = await pool.query(
-      `INSERT INTO Blogs (userid, headline, designation, current_institution, article, photos, blogtype, approval_status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [
-        userid,
-        headline,
-        designation,
-        current_institution,
-        article,
-        photos,
-        blogtype,
-        approval_status
-      ]
-    )
+    res.status(201).json(blog);
 
-    res.status(201).json(rows[0])
-
-    req.jwtPayload = req.jwtPayload || { userid };
     await logActivity({
       req,
-      action: "blog.create",
+      action: ActivityAction.BLOG_CREATED,
       category: "blog",
       targetType: "blog",
-      targetId: rows[0].blogid,
+      targetId: blog.blogid,
       description: `Created blog: ${headline}`,
       metadata: { headline, blogtype }
     });
   },
   { statusCode: 500, message: `Couldn't create blog` }
-)
+);
 
 // Get all blogs
 const getAllBlogs = errorWrapper(
   async (req, res) => {
-    const blogsQuery = `
-        SELECT b.*, u.fullname
-        FROM Blogs b
-        JOIN Users u ON b.userid = u.userid;
-    `
-
-    const { rows } = await pool.query(blogsQuery)
-    res.json(rows)
+    const blogs = await blogSvc.getAllBlogs();
+    res.json(blogs);
   },
   { statusCode: 500, message: `Couldn't get blogs` }
-)
+);
 
-// get approved blogs
+// Get approved blogs
 const getApprovedBlogs = errorWrapper(
   async (req, res) => {
-    const blogsQuery = `
-        SELECT b.*, u.fullname
-        FROM Blogs b
-        JOIN Users u ON b.userid = u.userid
-        WHERE b.approval_status = true;
-    `
-
-    const { rows } = await pool.query(blogsQuery)
-    res.json(rows)
+    const blogs = await blogSvc.getApprovedBlogs();
+    res.json(blogs);
   },
   { statusCode: 500, message: `Couldn't get approved blogs` }
-)
+);
 
 // Get a blog by ID
 const getBlogById = errorWrapper(
   async (req, res) => {
-    const { blogid } = req.params
-
-    const blogQuery = `
-        SELECT b.*, u.fullname
-        FROM Blogs b
-        JOIN Users u ON b.userid = u.userid
-        WHERE b.blogid = $1;
-    `
-
-    const { rows } = await pool.query(blogQuery, [blogid])
-
-    if (rows.length === 0) {
-      throw new CustomError("Blog not found", 404)
-    }
-
-    res.json(rows[0])
+    const { blogid } = req.params;
+    const blog = await blogSvc.getBlogById(blogid);
+    res.json(blog);
   },
   { statusCode: 500, message: `Couldn't get blog by blogid` }
-)
+);
 
 const getUserBlogs = errorWrapper(
   async (req, res) => {
-    const { userid } = req.params
-
-    if (!userid) {
-      throw new CustomError("User ID is required", 400)
-    }
-
-    const blogsQuery = `
-        SELECT b.*, u.fullname
-        FROM Blogs b
-        JOIN Users u ON b.userid = u.userid
-        WHERE b.userid = $1;
-    `
-
-    const { rows } = await pool.query(blogsQuery, [userid])
-
-    res.json(rows)
+    const { userid } = req.params;
+    if (!userid) throw new CustomError("User ID is required", 400);
+    const blogs = await blogSvc.getUserBlogs(userid);
+    res.json(blogs);
   },
   { statusCode: 500, message: `Couldn't get user blogs` }
-)
+);
 
 // Update a blog
 const updateBlog = errorWrapper(
   async (req, res) => {
-    const { blogid } = req.params
-    const {
-      userid,
-      headline,
-      designation,
-      current_institution,
-      article,
-      photos,
-      blogtype,
-      approval_status
-    } = req.body
+    const { blogid } = req.params;
+    const { userid, headline, designation, current_institution, article, photos, blogtype, approval_status } = req.body;
+    const blog = await blogSvc.updateBlog(blogid, { userid, headline, designation, current_institution, article, photos, blogtype, approval_status });
 
-    const { rows } = await pool.query(
-      `UPDATE Blogs
-     SET userid = $1, headline = $2, designation = $3, current_institution = $4, article = $5, photos = $6, blogtype = $7, approval_status = $8
-     WHERE blogid = $9 RETURNING *`,
-      [
-        userid,
-        headline,
-        designation,
-        current_institution,
-        article,
-        photos,
-        blogtype,
-        approval_status,
-        blogid
-      ]
-    )
+    await logActivity({
+      req,
+      action: ActivityAction.BLOG_UPDATED,
+      category: "blog",
+      targetType: "blog",
+      targetId: blogid,
+      description: `Updated blog ID: ${blogid} — ${headline}`,
+      metadata: { headline, blogtype },
+    });
 
-    if (rows.length === 0) {
-      throw new CustomError("Blog not found", 404)
-    }
-
-    res.json(rows[0])
+    res.json(blog);
   },
   { statusCode: 500, message: `Couldn't update blog` }
-)
+);
 
 const updateBlogStatus = errorWrapper(
   async (req, res) => {
-    const { blogid } = req.params
-    const { approval_status } = req.body
+    const { blogid } = req.params;
+    const { approval_status } = req.body;
+    if (approval_status === undefined) throw new CustomError("approval_status is required", 400);
 
-    if (approval_status === undefined) {
-      throw new CustomError("approval_status is required", 400)
-    }
+    const blog = await blogSvc.updateBlogStatus(blogid, approval_status);
 
-    const { rows } = await pool.query(
-      `UPDATE Blogs
-     SET approval_status = $1
-     WHERE blogid = $2
-     RETURNING *`,
-      [approval_status, blogid]
-    )
+    await logActivity({
+      req,
+      action: ActivityAction.BLOG_STATUS_CHANGED,
+      category: "blog",
+      targetType: "blog",
+      targetId: blogid,
+      description: `Blog ID ${blogid} approval status set to: ${approval_status}`,
+      metadata: { approval_status },
+    });
 
-    if (rows.length === 0) {
-      throw new CustomError("Blog not found", 404)
-    }
-
-    res.json(rows[0])
+    res.json(blog);
   },
   { statusCode: 500, message: `Couldn't update blog` }
-)
+);
 
 // Delete a blog
 const deleteBlog = errorWrapper(
   async (req, res) => {
-    const { blogid } = req.params
-    const { rowCount } = await pool.query(
-      "DELETE FROM Blogs WHERE blogid = $1",
-      [blogid]
-    )
+    const { blogid } = req.params;
+    await blogSvc.deleteBlog(blogid);
 
-    if (rowCount === 0) {
-      throw new CustomError("Blog not found", 404)
-    }
+    await logActivity({
+      req,
+      action: ActivityAction.BLOG_DELETED,
+      category: "blog",
+      targetType: "blog",
+      targetId: blogid,
+      description: `Deleted blog ID: ${blogid}`,
+    });
 
-    res.json({ message: "Blog deleted successfully" })
+    res.json({ message: "Blog deleted successfully" });
   },
   { statusCode: 500, message: `Couldn't delete blog` }
-)
+);
 
 module.exports = {
-  createBlog,
-  getAllBlogs,
-  getBlogById,
-  updateBlog,
-  deleteBlog,
-  updateBlogStatus,
-  getApprovedBlogs,
-  getUserBlogs
-}
+  createBlog, getAllBlogs, getBlogById, updateBlog, deleteBlog,
+  updateBlogStatus, getApprovedBlogs, getUserBlogs
+};

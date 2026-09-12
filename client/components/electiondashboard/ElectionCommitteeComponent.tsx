@@ -1,16 +1,16 @@
-"use client";
-import { getJWT, getUserRole } from "@/data/cookies/getCookies";
-import { APIENDPOINTS } from "@/data/urls";
-import { reqSalt_keys, xorEncrypt } from "@/utils/encrypt_req";
-import axios from "axios";
-import React, { useState } from "react";
-import { MdDelete, MdModeEditOutline } from "react-icons/md";
-import ConfirmationModal from "../commons/ConfirmationModal";
-import { useToast } from "../ui/use-toast";
-import ElectionModal from "./ElectionEditModal";
-import { formatDateDDMMYYYY } from "./functions";
+'use client';
+import { getJWT, getUserRole } from '@/data/cookies/getCookies';
+import { APIENDPOINTS } from '@/data/urls';
+import { reqSalt_keys, xorEncrypt } from '@/utils/encrypt_req';
+import React, { useState, useTransition } from 'react';
+import { MdDelete, MdModeEditOutline } from 'react-icons/md';
+import ConfirmationModal from '../commons/ConfirmationModal';
+import { useToast } from '../ui/use-toast';
+import ElectionModal from './ElectionEditModal';
+import { formatDateDDMMYYYY } from './functions';
+import { deleteElection } from '@/app/dashboard/(menu)/ec/actions';
 
-interface ElectionCommitteeItem {
+export interface ElectionCommitteeItem {
   electionid: number;
   year: string;
   election_type: string;
@@ -44,50 +44,51 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
   setSelectedElectionId,
   fetchData,
 }) => {
-  const [role, setRole] = useState<string>(getUserRole() || "general_member");
+  const [role, setRole] = useState<string>(getUserRole() || 'general_member');
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [openEditingModal, setOpenEditModal] = useState<boolean>(false);
   const [editElectionId, setEditElectionId] = useState<number>(-1);
   const [electioneditInfo, setelectioneditInfo] =
     useState<ElectionCommitteeItem>();
   const { toast } = useToast();
-  const handleDeleteConfirm = async () => {
+  const [loading, startTransition] = useTransition();
+  const handleDeleteConfirm = () => {
     if (editElectionId === -1) return;
-    try {
-      const encryptedElectionId = xorEncrypt(
-        editElectionId.toString(),
-        reqSalt_keys.election.deleteElection
-      );
-      const deleteUrl = `${APIENDPOINTS.election.deleteElection}/${encryptedElectionId}`;
-      const jwt = getJWT();
+    startTransition(async () => {
+      try {
+        const encryptedElectionId = xorEncrypt(
+          editElectionId.toString(),
+          reqSalt_keys.election.deleteElection,
+        );
+        const deleteUrl = `${APIENDPOINTS.election.deleteElection}/${encryptedElectionId}`;
+        const response = await deleteElection(deleteUrl, getJWT() || '');
 
-      const response = await axios.delete(deleteUrl, {
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-        },
-      });
+        if (response.status !== 200 && response.status !== 204) {
+          throw new Error('Error deleting election');
+        }
 
-      toast({
-        title: response.data?.message || "Election deleted successfully",
-        duration: 3000,
-      });
+        toast({
+          title: response.data?.message || 'Election deleted successfully',
+          duration: 3000,
+        });
 
-      setOpenDeleteModal(false);
-      fetchData();
-    } catch (error: any) {
-      toast({
-        title: "Error deleting election",
-        description: error?.response?.data?.message || error.message,
-        duration: 5000,
-        variant: "destructive",
-      });
-      setOpenDeleteModal(false);
-    }
+        setOpenDeleteModal(false);
+        fetchData();
+      } catch (error) {
+        toast({
+          title: 'Error deleting election',
+          description: 'Unable to delete election.',
+          duration: 5000,
+          variant: 'destructive',
+        });
+        setOpenDeleteModal(false);
+      }
+    });
   };
 
   const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-GB");
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-GB');
   };
 
   return (
@@ -115,6 +116,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
                       setelectioneditInfo(election);
                       setEditElectionId(election.electionid);
                     }}
+                    disabled={loading}
                     className="p-2 rounded border border-red-300 flex items-center justify-center"
                   >
                     <MdModeEditOutline className="text-red-300 text-sm" />
@@ -125,6 +127,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
                       setEditElectionId(election.electionid);
                       setOpenDeleteModal(true);
                     }}
+                    disabled={loading}
                     className="p-2 rounded border border-red-300 flex items-center justify-center"
                   >
                     <MdDelete className="text-red-300 text-sm" />
@@ -133,7 +136,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
               </div>
 
               <p className="font-bold">
-                {election.election_type || ""} Election {election.year || ""}
+                {election.election_type || ''} Election {election.year || ''}
               </p>
               {election.batch && (
                 <p>
@@ -141,11 +144,11 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
                 </p>
               )}
               <p>
-                <span className="font-medium">Registration Deadline:</span>{" "}
+                <span className="font-medium">Registration Deadline:</span>{' '}
                 {formatDateDDMMYYYY(election.candidatereg_end)}
               </p>
               <p>
-                <span className="font-medium">Election Date:</span>{" "}
+                <span className="font-medium">Election Date:</span>{' '}
                 {formatDateDDMMYYYY(election.election_end)}
               </p>
             </div>
@@ -155,7 +158,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
                 <img
                   src={
                     election.commissioner_profile_picture ||
-                    "/default-profile.png"
+                    '/default-profile.png'
                   }
                   alt="Commissioner"
                   className="w-12 h-12 rounded-full border border-gray-300"
@@ -168,7 +171,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
                     {election.commissioner_fullname}
                   </h3>
                   <p className="text-red-300 text-sm">
-                    {election.commissioner_email || "No email provided"}
+                    {election.commissioner_email || 'No email provided'}
                   </p>
                 </div>
               </div>
@@ -178,7 +181,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
               <div className="mt-4 flex items-center space-x-4">
                 <img
                   src={
-                    election.assistant_profile_picture || "/default-profile.png"
+                    election.assistant_profile_picture || '/default-profile.png'
                   }
                   alt="Assistant"
                   className="w-12 h-12 rounded-full border border-gray-300"
@@ -191,7 +194,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
                     {election.assistant_fullname}
                   </h3>
                   <p className="text-red-300 text-sm">
-                    {election.assistant_email || "No email provided"}
+                    {election.assistant_email || 'No email provided'}
                   </p>
                 </div>
               </div>
@@ -213,6 +216,7 @@ const ElectionCommitteeComponent: React.FC<ElectionCommitteeProps> = ({
           subtitle="Are you sure you want to delete the election? This action cannot be undone."
           confirmButtonTitle="Delete"
           onConfirm={handleDeleteConfirm}
+          disabled={loading}
           onCancel={() => setOpenDeleteModal(false)}
         />
       )}

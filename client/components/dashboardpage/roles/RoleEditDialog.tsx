@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -6,12 +6,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { BillingACL, Role } from "@/data/types";
-import { useState } from "react";
-import { Loader2 } from "lucide-react";
-import RoleForm from "./RoleForm";
+} from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { BillingACL, Role } from '@/data/types';
+import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import RoleForm from '../../../app/dashboard/(menu)/roles/components/RoleForm';
 
 interface RoleEditDialogProps {
   open: boolean;
@@ -19,26 +19,23 @@ interface RoleEditDialogProps {
   editRoleData: Role | null;
   onEditRoleChange: (field: keyof Role, value: any) => void;
   onSubmit: () => Promise<void> | void;
+  loading?: boolean;
 }
 
-/**
- * Dialog shell for editing an existing role.
- * Delegates all form rendering to RoleForm — this component only
- * owns the dialog chrome (title, scroll area, footer buttons).
- */
 const RoleEditDialog: React.FC<RoleEditDialogProps> = ({
   open,
   onOpenChange,
   editRoleData,
   onEditRoleChange,
   onSubmit,
+  loading,
 }) => {
   if (!editRoleData) return null;
 
   const [pending, setPending] = useState(false);
 
   const handleBillingACLChange = (updated: BillingACL) => {
-    onEditRoleChange("billingacl", updated);
+    onEditRoleChange('billingacl', updated);
   };
 
   const handleSubmit = async () => {
@@ -70,17 +67,23 @@ const RoleEditDialog: React.FC<RoleEditDialogProps> = ({
               onChange={onEditRoleChange}
               onBillingACLChange={handleBillingACLChange}
               idPrefix="edit"
-              disabledFields={editRoleData.roleid === 1 ? ["isdefaultrole"] : undefined}
+              disabledFields={
+                editRoleData.roleid === 1 ? ['isdefaultrole'] : undefined
+              }
             />
           </div>
         </ScrollArea>
 
         <div className="flex-none mt-auto border-t bg-background p-6">
           <DialogFooter className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={pending || loading}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={pending}>
+            <Button onClick={handleSubmit} disabled={pending || loading}>
               {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Changes
             </Button>

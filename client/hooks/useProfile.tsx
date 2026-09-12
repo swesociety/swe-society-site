@@ -22,6 +22,44 @@ interface ProfileContextType {
   logout: () => void;
 }
 
+const STORAGE_KEYS = {
+  PROFILE: "user_profile",
+  ROLE_ACCESS: "role_access",
+};
+
+const getSessionStorageItem = <T,>(key: string): T | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const data = sessionStorage.getItem(key);
+    return data ? JSON.parse(data) : null;
+  } catch (e) {
+    console.error(`Error reading ${key} from sessionStorage:`, e);
+    return null;
+  }
+};
+
+const setSessionStorageItem = <T,>(key: string, value: T | null) => {
+  if (typeof window === "undefined") return;
+  try {
+    if (value === null || value === undefined) {
+      sessionStorage.removeItem(key);
+    } else {
+      sessionStorage.setItem(key, JSON.stringify(value));
+    }
+  } catch (e) {
+    console.error(`Error writing ${key} to sessionStorage:`, e);
+  }
+};
+
+const removeSessionStorageItem = (key: string) => {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(key);
+  } catch (e) {
+    console.error(`Error removing ${key} from sessionStorage:`, e);
+  }
+};
+
 const ProfileContext = createContext<ProfileContextType>({
   profile: null,
   roleAccess: null,
@@ -36,11 +74,42 @@ const ProfileContext = createContext<ProfileContextType>({
 });
 
 export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [roleAccess, setRoleAccess] = useState<RoleAccessType | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [profile, setProfileState] = useState<UserProfile | null>(() =>
+    getSessionStorageItem<UserProfile>(STORAGE_KEYS.PROFILE)
+  );
+  const [roleAccess, setRoleAccessState] = useState<RoleAccessType | null>(() =>
+    getSessionStorageItem<RoleAccessType>(STORAGE_KEYS.ROLE_ACCESS)
+  );
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem(STORAGE_KEYS.PROFILE)) {
+      return false;
+    }
+    return true;
+  });
   const [error, setError] = useState<string | null>(null);
   const pathname = usePathname();
+
+  const setProfile = useCallback(
+    (value: UserProfile | null | ((prev: UserProfile | null) => UserProfile | null)) => {
+      setProfileState((prev) => {
+        const next = typeof value === "function" ? value(prev) : value;
+        setSessionStorageItem(STORAGE_KEYS.PROFILE, next);
+        return next;
+      });
+    },
+    []
+  );
+
+  const setRoleAccess = useCallback(
+    (value: RoleAccessType | null | ((prev: RoleAccessType | null) => RoleAccessType | null)) => {
+      setRoleAccessState((prev) => {
+        const next = typeof value === "function" ? value(prev) : value;
+        setSessionStorageItem(STORAGE_KEYS.ROLE_ACCESS, next);
+        return next;
+      });
+    },
+    []
+  );
 
   const fetchProfileAndRole = useCallback(async () => {
     const token = getJWT();
@@ -49,12 +118,16 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!token || !userId) {
       setProfile(null);
       setRoleAccess(null);
+      removeSessionStorageItem(STORAGE_KEYS.PROFILE);
+      removeSessionStorageItem(STORAGE_KEYS.ROLE_ACCESS);
       setLoading(false);
       return;
     }
 
     try {
-      setLoading(true);
+      if (!getSessionStorageItem(STORAGE_KEYS.PROFILE)) {
+        setLoading(true);
+      }
       setError(null);
 
       // Fetch profile and role access in parallel
@@ -80,19 +153,21 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setProfile, setRoleAccess]);
 
-  // Re-fetch on initial mount or when navigating to a new route if profile is missing
   useEffect(() => {
     const token = getJWT();
-    if (token && (!profile || !roleAccess)) {
+    if (token) {
       fetchProfileAndRole();
-    } else if (!token) {
+    } else {
+      setProfile(null);
+      setRoleAccess(null);
+      removeSessionStorageItem(STORAGE_KEYS.PROFILE);
+      removeSessionStorageItem(STORAGE_KEYS.ROLE_ACCESS);
       setLoading(false);
     }
-  }, [pathname, fetchProfileAndRole, profile, roleAccess]);
+  }, [pathname, fetchProfileAndRole, setProfile, setRoleAccess]);
 
-  // Called synchronously upon login to immediately hydrate memory state
   const login = useCallback(
     (userData: UserProfile, token?: string, roleData?: RoleAccessType) => {
       setProfile(userData);
@@ -100,21 +175,25 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (roleData) {
         setRoleAccess(roleData);
       }
-      // Trigger background sync for full profile details and role access
       fetchProfileAndRole();
     },
-    [fetchProfileAndRole]
+    [fetchProfileAndRole, setProfile, setRoleAccess]
   );
 
   const logout = useCallback(() => {
     clearCookies();
     setProfile(null);
     setRoleAccess(null);
-  }, []);
+    removeSessionStorageItem(STORAGE_KEYS.PROFILE);
+    removeSessionStorageItem(STORAGE_KEYS.ROLE_ACCESS);
+  }, [setProfile, setRoleAccess]);
 
-  const updateProfileLocal = useCallback((updated: Partial<UserProfile>) => {
-    setProfile((prev) => (prev ? { ...prev, ...updated } : null));
-  }, []);
+  const updateProfileLocal = useCallback(
+    (updated: Partial<UserProfile>) => {
+      setProfile((prev) => (prev ? { ...prev, ...updated } : null));
+    },
+    [setProfile]
+  );
 
   const hasStandingsAccess = useMemo(() => {
     if (!profile && !roleAccess) return false;
@@ -163,3 +242,4 @@ export const useProfile = () => {
 };
 
 export default useProfile;
+
