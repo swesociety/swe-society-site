@@ -17,6 +17,48 @@ export const getAllUsersServer = async (): Promise<MemberDataType[]> => {
   }
 };
 
+export const getUserById = async (userId: number) => {
+  try {
+    const response = await axios.get(
+      `${APIENDPOINTS.users.getUserbyID}/${userId}`,
+    );
+    return { status: response.status, data: response.data };
+  } catch (error) {
+    console.error('Error fetching user details:', error);
+    return getAxiosErrorResult(error);
+  }
+};
+
+export const updateUser = async (
+  userId: number,
+  data: Partial<import('@/data/types').UserProfile>,
+  token: string,
+) => {
+  try {
+    const response = await axios.put(
+      `${APIENDPOINTS.users.updateUserbyID}/${userId}`,
+      data,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    return { status: response.status, data: response.data };
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return getAxiosErrorResult(error);
+  }
+};
+
+export const sendUserCredentials = async (regno: string, nemail: string) => {
+  try {
+    const response = await axios.post(APIENDPOINTS.auth.sendUserCreds, {
+      regno,
+      nemail,
+    });
+    return { status: response.status, data: response.data };
+  } catch (error) {
+    console.error('Error sending user credentials:', error);
+    return getAxiosErrorResult(error);
+  }
+};
 
 export const getRoles = async (config: AxiosRequestConfig) => {
   try {
