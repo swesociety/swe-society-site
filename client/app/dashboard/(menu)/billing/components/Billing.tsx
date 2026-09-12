@@ -4,7 +4,11 @@ import PaymentModal from '@/components/billing/billingmanage/PaymentCreateModal'
 import UserPaymentsTable from '@/components/billing/billingmanage/UserPaymentTable';
 import React, { useState } from 'react';
 
-const Billing: React.FC = () => {
+interface BillingProps {
+  initialPayments?: any[];
+}
+
+const Billing: React.FC<BillingProps> = ({ initialPayments }) => {
   const [isPayFeeModalOpen, setIsPayFeeModalOpen] = useState(false);
 
   return (
@@ -24,9 +28,10 @@ const Billing: React.FC = () => {
           }}
         />
       )}
-      <UserPaymentsTable />
+      <UserPaymentsTable initialPayments={initialPayments} />
     </div>
   );
 };
+
 
 export default Billing;

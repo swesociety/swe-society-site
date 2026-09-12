@@ -1,26 +1,27 @@
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { getJWT } from "@/data/cookies/getCookies";
-import { APIENDPOINTS, BACKENDURL } from "@/data/urls";
-import axios from "axios";
-import { addDays, format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import { DateTime } from "luxon";
-import React, { useEffect, useState } from "react";
-import Select from "react-select";
-import { TimePicker } from "../ui/time-picker";
-import { toast } from "../ui/use-toast";
-import { combineDateAndTime, timeZone } from "./functions";
+} from '@/components/ui/popover';
+import { getJWT } from '@/data/cookies/getCookies';
+import { APIENDPOINTS } from '@/data/urls';
+import { addDays, format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
+import { DateTime } from 'luxon';
+import React, { useEffect, useMemo, useState, useTransition } from 'react';
+import Select from 'react-select';
+import { TimePicker } from '../../../../../components/ui/time-picker';
+import { toast } from '../../../../../components/ui/use-toast';
+import { combineDateAndTime, timeZone } from '../utils';
+import { updateElection } from '../actions';
 
 interface ElectionModalProps {
   onClose: () => void;
   fetchData: () => void;
   election_info: EditElectionmodal;
+  users?: UserResponse[];
 }
 
 interface UserResponse {
@@ -52,21 +53,31 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
   onClose,
   fetchData,
   election_info,
+  users: usersProp = [],
 }) => {
-  const now = new Date();
+  const userList: MappedUser[] = useMemo(
+    () =>
+      usersProp.map((user) => ({
+        id: user.userid,
+        value: user.userid,
+        label: `${user.fullname} - ${user.regno}`,
+      })),
+    [usersProp],
+  );
 
   const [editelectioninfo, seteditelectioninfo] =
     useState<EditElectionmodal>(election_info);
-  const [userList, setUserList] = useState<MappedUser[]>([]);
   const [electionDate, setelectionDate] = useState<Date>(
-    addDays(new Date(), 7)
+    addDays(new Date(), 7),
   );
   const [electionStart, setelectionStart] = useState<Date | undefined>();
   const [electionEnd, setelectionEnd] = useState<Date | undefined>();
   const [candidateStartDate, setCandidateStartDate] = useState<Date>();
   const [candidateEndDate, setCandidateEndDate] = useState<Date>();
+  const [loading, startTransition] = useTransition();
+
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
     seteditelectioninfo((prev) => ({ ...prev, [name]: value }));
@@ -74,7 +85,7 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
 
   const handleSelectChange = (
     selectedOption: MappedUser | null,
-    field: keyof EditElectionmodal
+    field: keyof EditElectionmodal,
   ) => {
     seteditelectioninfo((prev) => ({
       ...prev,
@@ -84,10 +95,9 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
 
   const validate_form_data = (e: React.FormEvent) => {
     e.preventDefault();
-    var form_error = "";
-    // Validation checks
+    let form_error = '';
     if (!editelectioninfo.year.trim()) {
-      form_error = "Please enter a year";
+      form_error = 'Please enter a year';
     }
 
     let value = editelectioninfo.year.trim();
@@ -97,32 +107,32 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
       (value &&
         (Number(value) < 1900 || Number(value) > new Date().getFullYear()))
     ) {
-      form_error = "Please enter a valid year";
+      form_error = 'Please enter a valid year';
     } else if (!editelectioninfo.election_type) {
-      form_error = "Please select an election type";
+      form_error = 'Please select an election type';
     } else if (
-      editelectioninfo.election_type === "Batch" &&
+      editelectioninfo.election_type === 'Batch' &&
       !editelectioninfo.batch?.trim()
     ) {
-      form_error = "Please enter a batch";
+      form_error = 'Please enter a batch';
     } else if (!editelectioninfo.election_commissioner) {
-      form_error = "Please select an election commissioner";
+      form_error = 'Please select an election commissioner';
     } else if (!editelectioninfo.assistant_commissioner) {
-      form_error = "Please select an assistant commissioner";
+      form_error = 'Please select an assistant commissioner';
     } else if (
       !editelectioninfo.candidatereg_start ||
       !editelectioninfo.candidatereg_end ||
       !editelectioninfo.election_start ||
       !editelectioninfo.election_end
     ) {
-      form_error = "Please select all dates";
+      form_error = 'Please select all dates';
     }
 
-    if (form_error !== "") {
+    if (form_error !== '') {
       toast({
         title: form_error,
-        description: "Please fill all the fields",
-        variant: "destructive",
+        description: 'Please fill all the fields',
+        variant: 'destructive',
       });
     } else {
       handleSubmit(e);
@@ -136,7 +146,7 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
     0,
     0,
     0,
-    0
+    0,
   );
   const reg_end = new Date(
     new Date(election_info.candidatereg_end).getFullYear(),
@@ -145,147 +155,147 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
     23,
     59,
     59,
-    999
+    999,
   );
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const edited_election = {
-      electionid: election_info.electionid,
-      year: election_info.year,
-      election_type: election_info.election_type,
-      batch: election_info.batch,
-      candidatereg_start: combineDateAndTime(
+    startTransition(async () => {
+      const candStart = combineDateAndTime(
         candidateStartDate ?? reg_start,
-        reg_start
-      ),
-      candidatereg_end: combineDateAndTime(
+        reg_start,
+      );
+      const candEnd = combineDateAndTime(
         candidateEndDate ?? reg_end,
-        reg_end
-      ),
-      election_start:
+        reg_end,
+      );
+      const elecStart =
         combineDateAndTime(
           electionDate,
-          electionStart ?? new Date(electionDate)
-        ) || election_info.election_start,
-      election_end:
+          electionStart ?? new Date(electionDate),
+        ) || election_info.election_start;
+      const elecEnd =
         combineDateAndTime(
           electionDate,
-          electionEnd ?? new Date(electionDate)
-        ) || election_info.election_end,
-      election_commissioner: editelectioninfo.election_commissioner,
-      assistant_commissioner: editelectioninfo.assistant_commissioner,
-    };
-    try {
-      await axios
-        .put(
+          electionEnd ?? new Date(electionDate),
+        ) || election_info.election_end;
+
+      const edited_election = {
+        electionid: election_info.electionid,
+        year: editelectioninfo.year || election_info.year,
+        election_type: editelectioninfo.election_type || election_info.election_type,
+        batch: editelectioninfo.batch || election_info.batch,
+        candidatereg_start: candStart instanceof Date ? candStart.toISOString() : String(candStart),
+        candidatereg_end: candEnd instanceof Date ? candEnd.toISOString() : String(candEnd),
+        election_start: elecStart instanceof Date ? elecStart.toISOString() : String(elecStart),
+        election_end: elecEnd instanceof Date ? elecEnd.toISOString() : String(elecEnd),
+        election_commissioner: editelectioninfo.election_commissioner,
+        assistant_commissioner: editelectioninfo.assistant_commissioner,
+      };
+
+      try {
+        const response = await updateElection(
           `${APIENDPOINTS.election.updateElection}/${election_info.electionid}`,
           edited_election,
-          { headers: { Authorization: `Bearer ${getJWT()}` } }
-        )
-        .then((res) => {
-          if (res.status === 201 || res.status === 200) {
-            onClose();
-            fetchData();
-          }
-        });
-    } catch (error) {
-      console.error("Error creating election:", error);
+          getJWT() || '',
+        );
 
-      toast({
-        title: "Failed to edit election. Please try again.",
-        description: (error as any).message,
-      });
-    }
-  };
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch(`${BACKENDURL}users/`);
-        if (!response.ok) throw new Error("Network response was not ok");
-        const data: UserResponse[] = await response.json();
-        setUserList(
-          data.map((user) => ({
-            id: user.userid,
-            value: user.userid,
-            label: `${user.fullname} - ${user.regno}`,
-          }))
-        );
-        const temp_electionDate = new Date(editelectioninfo.election_start);
-        const temp_electionStart = new Date(editelectioninfo.election_start);
-        const temp_electionEnd = new Date(editelectioninfo.election_end);
-        setelectionDate(
-          DateTime.utc(
-            temp_electionDate.getFullYear(),
-            temp_electionDate.getMonth() + 1,
-            temp_electionDate.getDate(),
-            temp_electionDate.getHours(),
-            temp_electionDate.getMinutes(),
-            temp_electionDate.getSeconds()
-          )
-            .setZone(timeZone)
-            .toJSDate()
-        );
-        setelectionStart(
-          DateTime.utc(
-            temp_electionStart.getFullYear(),
-            temp_electionStart.getMonth() + 1,
-            temp_electionStart.getDate(),
-            temp_electionStart.getHours(),
-            temp_electionStart.getMinutes(),
-            temp_electionStart.getSeconds()
-          )
-            .setZone(timeZone)
-            .toJSDate()
-        );
-        setelectionEnd(
-          DateTime.utc(
-            temp_electionEnd.getFullYear(),
-            temp_electionEnd.getMonth() + 1,
-            temp_electionEnd.getDate(),
-            temp_electionEnd.getHours(),
-            temp_electionEnd.getMinutes(),
-            temp_electionEnd.getSeconds()
-          )
-            .setZone(timeZone)
-            .toJSDate()
-        );
-        const temp_CandidateStartDate = new Date(
-          editelectioninfo.candidatereg_start
-        );
-        const temp_CandidateEndDate = new Date(
-          editelectioninfo.candidatereg_end
-        );
-        setCandidateStartDate(
-          DateTime.utc(
-            temp_CandidateStartDate.getFullYear(),
-            temp_CandidateStartDate.getMonth() + 1,
-            temp_CandidateStartDate.getDate(),
-            temp_CandidateStartDate.getHours(),
-            temp_CandidateStartDate.getMinutes(),
-            temp_CandidateStartDate.getSeconds()
-          )
-            .setZone(timeZone)
-            .toJSDate()
-        );
-        setCandidateEndDate(
-          DateTime.utc(
-            temp_CandidateEndDate.getFullYear(),
-            temp_CandidateEndDate.getMonth() + 1,
-            temp_CandidateEndDate.getDate(),
-            temp_CandidateEndDate.getHours(),
-            temp_CandidateEndDate.getMinutes(),
-            temp_CandidateEndDate.getSeconds()
-          )
-            .setZone(timeZone)
-            .toJSDate()
-        );
-      } catch (error) {
-        console.error("Fetch error:", error);
+        if (response?.status === 200 || response?.status === 201) {
+          toast({
+            title: 'Election updated successfully',
+            duration: 3000,
+          });
+          onClose();
+          fetchData();
+        } else {
+          toast({
+            title: 'Failed to edit election. Please try again.',
+            description: (response?.data as any)?.message || 'An error occurred',
+            variant: 'destructive',
+          });
+        }
+      } catch (error: any) {
+        console.error('Error updating election:', error);
+        toast({
+          title: 'Failed to edit election. Please try again.',
+          description: error?.message,
+          variant: 'destructive',
+        });
       }
-    };
-    fetchUsers();
-  }, []);
+    });
+  };
+
+  useEffect(() => {
+    const temp_electionDate = new Date(editelectioninfo.election_start);
+    const temp_electionStart = new Date(editelectioninfo.election_start);
+    const temp_electionEnd = new Date(editelectioninfo.election_end);
+    setelectionDate(
+      DateTime.utc(
+        temp_electionDate.getFullYear(),
+        temp_electionDate.getMonth() + 1,
+        temp_electionDate.getDate(),
+        temp_electionDate.getHours(),
+        temp_electionDate.getMinutes(),
+        temp_electionDate.getSeconds(),
+      )
+        .setZone(timeZone)
+        .toJSDate(),
+    );
+    setelectionStart(
+      DateTime.utc(
+        temp_electionStart.getFullYear(),
+        temp_electionStart.getMonth() + 1,
+        temp_electionStart.getDate(),
+        temp_electionStart.getHours(),
+        temp_electionStart.getMinutes(),
+        temp_electionStart.getSeconds(),
+      )
+        .setZone(timeZone)
+        .toJSDate(),
+    );
+    setelectionEnd(
+      DateTime.utc(
+        temp_electionEnd.getFullYear(),
+        temp_electionEnd.getMonth() + 1,
+        temp_electionEnd.getDate(),
+        temp_electionEnd.getHours(),
+        temp_electionEnd.getMinutes(),
+        temp_electionEnd.getSeconds(),
+      )
+        .setZone(timeZone)
+        .toJSDate(),
+    );
+    const temp_CandidateStartDate = new Date(
+      editelectioninfo.candidatereg_start,
+    );
+    const temp_CandidateEndDate = new Date(
+      editelectioninfo.candidatereg_end,
+    );
+    setCandidateStartDate(
+      DateTime.utc(
+        temp_CandidateStartDate.getFullYear(),
+        temp_CandidateStartDate.getMonth() + 1,
+        temp_CandidateStartDate.getDate(),
+        temp_CandidateStartDate.getHours(),
+        temp_CandidateStartDate.getMinutes(),
+        temp_CandidateStartDate.getSeconds(),
+      )
+        .setZone(timeZone)
+        .toJSDate(),
+    );
+    setCandidateEndDate(
+      DateTime.utc(
+        temp_CandidateEndDate.getFullYear(),
+        temp_CandidateEndDate.getMonth() + 1,
+        temp_CandidateEndDate.getDate(),
+        temp_CandidateEndDate.getHours(),
+        temp_CandidateEndDate.getMinutes(),
+        temp_CandidateEndDate.getSeconds(),
+      )
+        .setZone(timeZone)
+        .toJSDate(),
+    );
+  }, [editelectioninfo]);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
@@ -320,7 +330,7 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
             <option value="Society">Society</option>
             <option value="Batch">Batch</option>
           </select>
-          {editelectioninfo.election_type === "Batch" && (
+          {editelectioninfo.election_type === 'Batch' && (
             <input
               type="text"
               name="batch"
@@ -376,7 +386,7 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
           <Select
             options={userList}
             onChange={(option) =>
-              handleSelectChange(option, "election_commissioner")
+              handleSelectChange(option, 'election_commissioner')
             }
             className="border rounded w-full text-gray-800 bg-gray-100"
             placeholder="Election Commissioner"
@@ -384,7 +394,7 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
           <Select
             options={userList}
             onChange={(option) =>
-              handleSelectChange(option, "assistant_commissioner")
+              handleSelectChange(option, 'assistant_commissioner')
             }
             className="border rounded w-full text-gray-800 bg-gray-100"
             placeholder="Assistant Commissioner"
@@ -400,9 +410,10 @@ const ElectionModal: React.FC<ElectionModalProps> = ({
             </button>
             <button
               onClick={validate_form_data}
-              className="bg-red-600 text-white rounded px-4 py-2"
+              disabled={loading}
+              className="bg-red-600 text-white rounded px-4 py-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Submit
+              {loading ? 'Submitting...' : 'Submit'}
             </button>
           </div>
         </form>
@@ -423,7 +434,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ date, setDate }) => (
         variant="outline"
         className="w-full justify-start text-left font-normal"
       >
-        <CalendarIcon className="mr-2 h-4 w-4" /> {format(date, "LLL dd, y")}
+        <CalendarIcon className="mr-2 h-4 w-4" /> {format(date, 'LLL dd, y')}
       </Button>
     </PopoverTrigger>
     <PopoverContent className="w-auto p-0" align="start">

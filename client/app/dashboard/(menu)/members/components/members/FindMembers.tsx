@@ -15,8 +15,15 @@ import { getTableColumns } from "./TableColumns";
 import { UserTable } from "./UserTable";
 import { RoleUpdateDialog } from "./RoleUpdateDialog";
 import { UserDetailsDialog } from "./UserDetailsDialog";
+import { EditUserModal } from "./EditUserModal";
 
-const FindMember: React.FC = () => {
+import type { MemberDataType } from "@/data/types";
+
+interface FindMemberProps {
+  initialMembers?: MemberDataType[];
+}
+
+const FindMember: React.FC<FindMemberProps> = ({ initialMembers }) => {
   const {
     data,
     selectedUserIds,
@@ -24,12 +31,14 @@ const FindMember: React.FC = () => {
     handleSelectUser,
     setSelectedUserIds,
     handleRoleUpdate,
-  } = useUsers();
+  } = useUsers(initialMembers);
   const [search, setSearch] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
   const [showUserDetails, setShowUserDetails] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editUserId, setEditUserId] = useState<number | null>(null);
 
   const filteredData = useMemo(
     () =>
@@ -59,11 +68,17 @@ const FindMember: React.FC = () => {
     setShowUserDetails(true);
   };
 
+  const handleEditUser = (userId: number) => {
+    setEditUserId(userId);
+    setShowEditModal(true);
+  };
+
   const columns = getTableColumns(
     selectedUserIds,
     handleSelectUser,
     handleSelectAllVisible,
-    handleViewDetails
+    handleViewDetails,
+    handleEditUser,
   );
 
   const table = useReactTable({
@@ -121,6 +136,12 @@ const FindMember: React.FC = () => {
         open={showUserDetails}
         onOpenChange={setShowUserDetails}
         userId={selectedUserId}
+      />
+      <EditUserModal
+        open={showEditModal}
+        onOpenChange={setShowEditModal}
+        userId={editUserId}
+        onSuccess={() => window.location.reload()}
       />
     </div>
   );

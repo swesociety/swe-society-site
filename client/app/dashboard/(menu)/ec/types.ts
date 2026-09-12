@@ -25,3 +25,133 @@ export type ElectionCommittee = {
 };
 
 export type ElectionCommitteeListResponse = ElectionCommittee[];
+
+export interface CommitteePost {
+  committeepostid: number;
+  post_name: string;
+}
+
+export interface CommitteeUser {
+  userid: number;
+  fullname: string;
+  regno: string;
+}
+
+export interface CommitteeElection {
+  electionid: number;
+  year: string;
+  election_type: string;
+  batch: string;
+}
+
+export interface CommitteeMember {
+  committeeid: number;
+  userid: number;
+  postid: number;
+  electionid: number;
+  executive_committeeid: number;
+  service_start?: string | null;
+  service_end?: string | null;
+  fullname: string;
+  regno: string;
+  profile_picture?: string | null;
+  post_name: string;
+  executive_committee_name: string;
+  executive_committee_year: string;
+  year: string;
+  election_type: string;
+  batch: string;
+}
+
+export interface CommitteeData {
+  posts: CommitteePost[];
+  members: CommitteeMember[];
+  users: CommitteeUser[];
+  elections: CommitteeElection[];
+}
+
+export interface ExecutiveCommittee {
+  committeeid: number;
+  committee_name: string;
+  year: string;
+  created_at?: string;
+}
+
+export interface CommitteeMemberInput {
+  userid: number;
+  postid: number;
+  executive_committeeid: number;
+  service_start: string;
+  service_end: string;
+  electionid?: number;
+}
+
+export interface ElectionFormInput {
+  electionid?: number;
+  year?: string;
+  election_type?: string;
+  batch?: string;
+  election_commissioner?: number;
+  assistant_commissioner?: number;
+  candidatereg_start?: string | Date;
+  candidatereg_end?: string | Date;
+  election_start?: string | Date;
+  election_end?: string | Date;
+}
+
+export interface UserResponse {
+  userid: number;
+  regno: string;
+  fullname: string;
+}
+
+export interface PostResponse {
+  committeepostid: number;
+  post_name: string;
+}
+
+export interface MappedUser {
+  id?: number;
+  value: number;
+  label: string;
+}
+
+export interface MappedPost {
+  value: number;
+  label: string;
+}
+
+export interface MemberFormData {
+  userid: number;
+  postid: number;
+  electionid: number;
+}
+
+export interface AddCommitteeMemberModalProps {
+  electionId: number;
+  onClose: () => void;
+  fetchMembers?: () => void;
+  users?: UserResponse[];
+  posts?: PostResponse[];
+}
+
+export interface NominationMember {
+  userid: number;
+  year: string;
+  fullname: string;
+  profile_picture: string | null;
+  email: string;
+  regno: string;
+  session: string;
+  committee_post: string;
+}
+
+export interface ManualNominationInput {
+  electionid: number;
+  userId: number;
+  marka_name: string;
+  slogan: string;
+  logo_url: string;
+  committeepostid: number;
+  request_approval_status: boolean;
+}

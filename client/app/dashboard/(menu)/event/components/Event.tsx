@@ -1,6 +1,6 @@
 'use client';
 
-import EventCard from '@/components/dashboardpage/event/EventCard';
+import EventCard from '@/app/dashboard/(menu)/event/components/EventCard';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { EventType } from '@/data/types';
@@ -62,9 +62,16 @@ const Event: React.FC<Props> = ({ initialEvents }) => {
     startTransition(async () => {
       setLoading(true);
       const response = await createEvent(newEvent, headerConfig());
-      if (response.status === 201) {
+      if (response.status === 201 || response.status === 200) {
         toast({ title: 'Event created successfully' });
         setShowCreateForm(false);
+        setNewEvent({
+          headline: '',
+          event_details: '',
+          start_time: '',
+          end_time: '',
+          coverphoto: '',
+        });
         fetchEvents();
       } else {
         toast({
@@ -78,9 +85,16 @@ const Event: React.FC<Props> = ({ initialEvents }) => {
   };
 
   const handleCoverPicUpload = (result: any) => {
-    if (result?.info?.secure_url) {
-      const uploadedURL = result.info.secure_url;
-      setNewEvent((prevData) => ({ ...prevData, coverphoto: uploadedURL }));
+    if (typeof result?.info === 'object' && result?.info?.secure_url) {
+      setNewEvent((prevData) => ({
+        ...prevData,
+        coverphoto: result.info.secure_url,
+      }));
+    } else if (typeof result?.info === 'string') {
+      setNewEvent((prevData) => ({
+        ...prevData,
+        coverphoto: result.info,
+      }));
     }
   };
 
@@ -150,7 +164,7 @@ const Event: React.FC<Props> = ({ initialEvents }) => {
           />
           <div className="flex items-center gap-4">
             <CldUploadButton
-              onUpload={(result: any) => handleCoverPicUpload(result)}
+              onSuccess={(result: any) => handleCoverPicUpload(result)}
               uploadPreset={process.env.NEXT_PUBLIC_IMG_UPLOAD_PRESET}
               className="bg-primary p-2 rounded"
             >

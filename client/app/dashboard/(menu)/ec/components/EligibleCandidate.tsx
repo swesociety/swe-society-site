@@ -1,5 +1,5 @@
-"use client";
-import { Button } from "@/components/ui/button";
+'use client';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,21 +7,21 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { getJWT } from "@/data/cookies/getCookies";
-import { BACKENDURL } from "@/data/urls";
-import axios from "axios";
-import { useState } from "react";
-import { toast } from "../ui/use-toast";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { getJWT } from '@/data/cookies/getCookies';
+import { BACKENDURL } from '@/data/urls';
+import axios from 'axios';
+import { useState } from 'react';
+import { toast } from '../../../../../components/ui/use-toast';
 
-const batches = ["2019", "2020", "2021", "2022", "2023", "2024", "2025"];
-const code = "oremama56";
+const batches = ['2019', '2020', '2021', '2022', '2023', '2024', '2025'];
+const code = 'oremama56';
 
 const EligibleCandidate = () => {
   const [selectedBatch, setSelectedBatch] = useState(batches[0]);
-  const [regNo, setRegNo] = useState("");
+  const [regNo, setRegNo] = useState('');
   const [open, setOpen] = useState(false); // for controlling dialog visibility
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,30 +38,30 @@ const EligibleCandidate = () => {
         eligible_voter,
         {
           headers: { Authorization: `Bearer ${getJWT()}` },
-        }
+        },
       );
 
       if (res.status === 200 || res.status === 201) {
         toast({
-          title: "Success",
-          description: "Eligible candidate added successfully!",
+          title: 'Success',
+          description: 'Eligible candidate added successfully!',
         });
         setOpen(false); // ✅ Close dialog after success
         setSelectedBatch(batches[0]);
-        setRegNo("");
+        setRegNo('');
       }
     } catch (err: any) {
       if (err.response?.status === 400) {
         toast({
-          title: "Error",
-          description: "Invalid Registration Number or Batch",
-          variant: "destructive",
+          title: 'Error',
+          description: 'Invalid Registration Number or Batch',
+          variant: 'destructive',
         });
       } else {
         toast({
-          title: "Error",
-          description: "An error occurred while adding the candidate",
-          variant: "destructive",
+          title: 'Error',
+          description: 'An error occurred while adding the candidate',
+          variant: 'destructive',
         });
       }
     }
