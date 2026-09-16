@@ -2,7 +2,7 @@ const cors = require("cors");
 const express = require("express");
 const { testDatabaseConnection } = require("./db/dbconnect.js");
 const { createTables } = require("./db/tables.js");
-const { addStandingsAccess } = require("./db/migrations/add_standingsaccess.js");
+const { runMigrations } = require("./db/migrations/run.js");
 const achievmentRoute = require("./routes/achievement.js");
 const authRoute = require("./routes/auth.js");
 const blogRoute = require("./routes/blogs.js");
@@ -17,7 +17,8 @@ const candidateRoute = require("./routes/candidate.js");
 const voteRoute = require("./routes/votes.js");
 const paymentRoute = require("./routes/payment.js");
 const societyFeeRoute = require("./routes/societyFee.js");
-const testing = require("./routes/testing.js")
+const testing = require("./routes/testing.js");
+const activityLogRoute = require("./routes/activityLog.js");
 
 const PORT = 5050
 
@@ -49,13 +50,14 @@ app.use("/vote", voteRoute)
 app.use("/payment", paymentRoute)
 app.use("/society-fee", societyFeeRoute)
 app.use("/testing",testing)
+app.use("/activity-logs", activityLogRoute)
 
 
 app.listen(PORT, async () => {
   // await connectToDB();
   await testDatabaseConnection()
   await createTables()
-  await addStandingsAccess()
+  await runMigrations()
   console.log(`Server is running in ${PORT}`)
 })
 

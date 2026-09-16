@@ -588,10 +588,168 @@ async function updateBatchPaymentStatusService({
   }
 }
 
+const createMethodType = async ({ method_name, transaction_account, account_holder }) => {
+  const { rows } = await pool.query(
+    `INSERT INTO method_types (method_name, transaction_account, account_holder)
+     VALUES ($1, $2, $3) RETURNING *`,
+    [method_name, transaction_account, account_holder]
+  );
+  return rows[0];
+};
+
+const deletePaymentType = async (payment_typeid) => {
+  await pool.query(`DELETE FROM payment_types WHERE payment_typeid = $1`, [payment_typeid]);
+};
+
+const deleteMethodType = async (payment_methodid) => {
+  await pool.query(`DELETE FROM method_types WHERE payment_methodid = $1`, [payment_methodid]);
+};
+
+const deletePayment = async (paymentid) => {
+  await pool.query(`DELETE FROM payment WHERE paymentid = $1`, [paymentid]);
+};
+
+const dynamicUpdate = async (table, idField, idValue, updateFields) => {
+  const keys = Object.keys(updateFields);
+  const values = Object.values(updateFields);
+  if (keys.length === 0) throw new CustomError("No fields to update", 400);
+
+  const setClause = keys.map((key, index) => `${key} = $${index + 1}`).join(", ");
+  const query = `UPDATE ${table} SET ${setClause} WHERE ${idField} = $${keys.length + 1} RETURNING *`;
+  return pool.query(query, [...values, idValue]);
+};
+
+const getAllPaymentTypes = async () => {
+  const { rows } = await pool.query(
+    `SELECT * FROM payment_types ORDER BY created_at DESC NULLS LAST, payment_typeid DESC`
+  );
+  return rows;
+};
+
+const getPaymentTypesByYear = async (year) => {
+  const { rows } = await pool.query(`SELECT * FROM payment_types WHERE year = $1`, [year]);
+  return rows;
+};
+
+const getPaymentTypesByUserId = async (userid) => {
+  const { rows } = await pool.query(`SELECT * FROM payment WHERE userId = $1`, [userid]);
+  return rows;
+};
+
+const getAllMethodTypes = async () => {
+  const { rows } = await pool.query(`SELECT * FROM method_types`);
+  return rows;
+};
+
+const getPaymentsByType = async (payment_typeid) => {
+  const { rows } = await pool.query(
+    `SELECT p.*, u.fullname, u.session, u.regno, m.method_name, p.payment_status
+     FROM payment p
+     JOIN Users u ON p.userId = u.userId
+     JOIN method_types m ON p.methodid = m.payment_methodid
+     WHERE p.payment_typeid = $1`,
+    [payment_typeid]
+  );
+  return rows;
+};
+
+const getMethodTypesbyPaymentid = async (payment_typeid) => {
+  const { rows: paymentTypeRows } = await pool.query(
+    `SELECT method FROM payment_types WHERE payment_typeid = $1`,
+    [payment_typeid]
+  );
+
+  if (paymentTypeRows.length === 0 || !paymentTypeRows[0].method) {
+    return null;
+  }
+
+  const methodIds = paymentTypeRows[0].method;
+  const { rows: methodDetails } = await pool.query(
+    `SELECT * FROM method_types WHERE payment_methodid = ANY($1::int[])`,
+    [methodIds]
+  );
+
+  return methodDetails;
+};
+
+const getSocietyFeeTable = async () => {
+  const { rows: paymentTypes } = await pool.query(
+    `SELECT payment_typeid, payment_type, year, subtype, amount
+     FROM payment_types
+     WHERE LOWER(payment_type) LIKE '%society%'
+        OR LOWER(payment_type) LIKE '%semester%'
+        OR subtype ~* '^[0-9]\/[0-9]'
+        OR subtype ILIKE '%semester%'
+        OR subtype ILIKE '%1/%' OR subtype ILIKE '%2/%' OR subtype ILIKE '%3/%' OR subtype ILIKE '%4/%'
+     ORDER BY year ASC, subtype ASC`
+  );
+
+  let effectivePaymentTypes = paymentTypes;
+  if (effectivePaymentTypes.length === 0) {
+    const { rows: allPts } = await pool.query(
+      `SELECT payment_typeid, payment_type, year, subtype, amount
+       FROM payment_types
+       ORDER BY year ASC, subtype ASC`
+    );
+    effectivePaymentTypes = allPts;
+  }
+
+  const { rows: users } = await pool.query(
+    `SELECT
+       u.userid, u.fullname, u.regno, u.session,
+       LEFT(u.regno, 4) AS batch
+     FROM Users u
+     ORDER BY u.regno ASC`
+  );
+
+  const { rows: payments } = await pool.query(
+    `SELECT p.paymentid, p.userid, p.payment_typeid, p.payment_status, p.created_at, p.amount
+     FROM payment p`
+  );
+
+  const paymentMap = {};
+  for (const p of payments) {
+    const key = `${p.userid}_${p.payment_typeid}`;
+    if (!paymentMap[key] || (p.payment_status && !paymentMap[key].payment_status)) {
+      paymentMap[key] = p;
+    }
+  }
+
+  const userPayments = users.map((u) => {
+    const payments_map = {};
+    for (const pt of effectivePaymentTypes) {
+      const key = `${u.userid}_${pt.payment_typeid}`;
+      payments_map[pt.payment_typeid] = paymentMap[key] || null;
+    }
+    return {
+      userid: u.userid,
+      fullname: u.fullname,
+      regno: u.regno,
+      session: u.session,
+      batch: u.batch,
+      payments: payments_map,
+    };
+  });
+
+  return { paymentTypes: effectivePaymentTypes, userPayments };
+};
+
 module.exports = {
   SemesterKey,
   normalizeSemesterKey,
   createPaymentType,
+  createMethodType,
+  deletePaymentType,
+  deleteMethodType,
+  deletePayment,
+  dynamicUpdate,
+  getAllPaymentTypes,
+  getPaymentTypesByYear,
+  getPaymentTypesByUserId,
+  getAllMethodTypes,
+  getPaymentsByType,
+  getMethodTypesbyPaymentid,
+  getSocietyFeeTable,
   getPaymentTypeSubtype,
   createPayment,
   getAllPaymentsWithAuditors,
@@ -599,4 +757,5 @@ module.exports = {
   updatePaymentStatusService,
   updateBatchPaymentStatusService,
 };
+
 

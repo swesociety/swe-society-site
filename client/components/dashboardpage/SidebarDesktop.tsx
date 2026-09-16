@@ -1,19 +1,19 @@
-"use client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+'use client';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { clearCookies } from "@/data/cookies/deleteCookies";
-import { getUserDP, getUserName, getUserReg } from "@/data/cookies/getCookies";
-import { SidebarItems } from "@/data/types";
-import { Home, LogOut, MoreHorizontal } from "lucide-react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useToast } from "../ui/use-toast";
-import SidebarButton from "./SidebarButton";
+} from '@/components/ui/popover';
+import { clearCookies } from '@/data/cookies/deleteCookies';
+import { getUserDP, getUserName, getUserReg } from '@/data/cookies/getCookies';
+import { SidebarItems } from '@/data/types';
+import { Home, LogOut, MoreHorizontal } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useToast } from '../ui/use-toast';
+import SidebarButton from './SidebarButton';
 
 interface SidebarDesktopProps {
   sidebarItems: SidebarItems;
@@ -23,9 +23,9 @@ function SidebarDesktop(props: SidebarDesktopProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const [name, setName] = useState<string>("SWE Member");
-  const [regNo, setregNo] = useState<string>("2020831000");
-  const [photourl, setphotourl] = useState<string>("");
+  const [name, setName] = useState<string>('SWE Member');
+  const [regNo, setregNo] = useState<string>('2020831000');
+  const [photourl, setphotourl] = useState<string>('');
   useEffect(() => {
     setName(getUserName() as string);
     setregNo(getUserReg() as string);
@@ -34,25 +34,25 @@ function SidebarDesktop(props: SidebarDesktopProps) {
   const handleLogout = () => {
     clearCookies();
     toast({
-      title: "Logout Successfully",
+      title: 'Logout Successfully',
       duration: 3000,
     });
-    router.push("/signin");
+    router.push('/signin');
   };
   return (
     <aside className=" w-[270px] max-w-xs h-screen fixed left-0 top-0 z-50 border-r bg-background">
       <div className="h-full px-3 py-4 snap-y">
         <div className="flex flex-col gap-1 overflow-y-auto h-5/6 max-h-5/6">
           {props.sidebarItems.links.map((link, index) => (
-            <Link key={index} href={link.href}>
+            <button key={index} onClick={() => router.push(link.href)}>
               <SidebarButton
-                variant={pathname === link.href ? "default" : "ghost"}
+                variant={pathname === link.href ? 'default' : 'ghost'}
                 Icon={link.Icon}
                 className="w-full"
               >
                 {link.label}
               </SidebarButton>
-            </Link>
+            </button>
           ))}
         </div>
         <div className="absolute left-0 bottom-3 w-full px-3">

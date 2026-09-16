@@ -1,6 +1,6 @@
 "use client";
 
-import EditNotice from "@/components/dashboardpage/notice/EditNotice";
+import EditNotice from "@/app/dashboard/(menu)/notice/components/EditNotice";
 import { Button } from "@/components/ui/button";
 import { MdOutlineImage } from "react-icons/md";
 
@@ -29,12 +29,14 @@ interface NoticeCardProps {
   key: number;
   handle_dlt: (noticeid: any) => void;
   fetch_notices: () => void;
+  loading?: boolean;
 }
 
 export default function Component({
   notice,
   handle_dlt,
   fetch_notices,
+  loading
 }: NoticeCardProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -56,6 +58,7 @@ export default function Component({
               onClick={() => {
                 handle_dlt(notice.noticeid);
               }}
+              disabled={loading}
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-blue-400 hover:text-blue-600 hover:bg-blue-100/10"
@@ -99,6 +102,7 @@ export default function Component({
               size="sm"
               className="text-xs bg-purple-500/20 hover:bg-purple-500/30 text-purple-300"
               onClick={() => window.open(notice.picture!, "_blank")}
+              disabled={loading}
             >
               <MdOutlineImage className="h-3 w-3 mr-1" />
               Image
@@ -110,6 +114,7 @@ export default function Component({
               size="sm"
               className="text-xs bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300"
               onClick={() => window.open(notice.file!, "_blank")}
+              disabled={loading}
             >
               <FileText className="h-3 w-3 mr-1" />
               Document

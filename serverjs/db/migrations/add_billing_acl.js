@@ -124,7 +124,6 @@ async function addBillingACL() {
     process.exit(1);
   } finally {
     client.release();
-    await pool.end();
   }
 }
 

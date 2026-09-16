@@ -46,8 +46,6 @@ async function addSocietyFeeTables() {
     console.log("✅ Manual Migration Successful: society_fees table updated with verified_by and accepted_by columns.");
   } catch (error) {
     console.error("❌ Migration failed (add_society_fee_tables):", error);
-  } finally {
-    await pool.end();
   }
 }
 

@@ -11,6 +11,7 @@ interface PermissionCheckboxProps {
   label?: string;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
+  disabled?: boolean;
 }
 
 /**
@@ -23,6 +24,7 @@ const PermissionCheckbox: React.FC<PermissionCheckboxProps> = ({
   label,
   checked,
   onCheckedChange,
+  disabled,
 }) => (
   <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted transition-colors">
     <Checkbox
@@ -30,6 +32,7 @@ const PermissionCheckbox: React.FC<PermissionCheckboxProps> = ({
       checked={checked}
       onCheckedChange={(val) => onCheckedChange(val as boolean)}
       className="h-5 w-5"
+      disabled={disabled}
     />
     <Label htmlFor={id} className="text-sm cursor-pointer">
       {label ?? formatLabel(fieldKey)}

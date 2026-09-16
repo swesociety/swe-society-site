@@ -1,20 +1,29 @@
-import { Role } from "@/data/types";
-import PermissionCheckbox from "./PermissionCheckbox";
+import { Role } from '@/data/types';
+import PermissionCheckbox from './PermissionCheckbox';
+
+export type RolePermissionField = {
+  [K in keyof Role]: Role[K] extends boolean ? K : never;
+}[keyof Role];
 
 interface PermissionGroupProps {
   /** Section heading shown above the checkbox grid. */
   title: string;
   /** List of Role field keys to render as checkboxes. */
-  fields: (keyof Role)[];
+  fields: RolePermissionField[];
   /** Current role data — used to read checked state. */
-  roleData: Partial<Omit<Role, "roleid">>;
+  roleData: Partial<Omit<Role, 'roleid'>>;
   /** Called when any checkbox in the group changes. */
-  onChange: (field: keyof Role, value: boolean) => void;
+  onChange: (field: RolePermissionField, value: boolean) => void;
   /**
    * Prefix for each checkbox element id — must be unique per form instance
    * to avoid id collisions when multiple dialogs are mounted simultaneously.
    */
   idPrefix: string;
+  /**
+   * Fields that should be rendered as disabled checkboxes.
+   */
+  disabledFields?: RolePermissionField[];
+  disabled?: boolean;
 }
 
 /**
@@ -27,6 +36,8 @@ const PermissionGroup: React.FC<PermissionGroupProps> = ({
   roleData,
   onChange,
   idPrefix,
+  disabledFields,
+  disabled,
 }) => (
   <div className="space-y-3">
     <h3 className="text-lg font-semibold text-primary">{title}</h3>
@@ -40,8 +51,9 @@ const PermissionGroup: React.FC<PermissionGroupProps> = ({
             key={key}
             id={`${idPrefix}-${key}`}
             fieldKey={key}
-            checked={(roleData[key] as boolean) ?? false}
+            checked={roleData[key] ?? false}
             onCheckedChange={(checked) => onChange(key, checked)}
+            disabled={disabledFields?.includes(key) || disabled}
           />
         );
       })}

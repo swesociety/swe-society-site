@@ -155,4 +155,10 @@ export const APIENDPOINTS = {
     create: `${BACKENDURL}vote/create`,
     getVoteCountByID: `${BACKENDURL}vote/list`,
   },
+  activityLog: {
+    getAllLogs: `${BACKENDURL}activity-logs`,
+    getMyLogs: `${BACKENDURL}activity-logs/my`,
+    getLogsByUser: `${BACKENDURL}activity-logs/user`,
+    getLogsByCategory: `${BACKENDURL}activity-logs/category`,
+  },
 };

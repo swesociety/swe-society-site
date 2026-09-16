@@ -5,15 +5,27 @@ import { headerConfig } from "@/lib/header_config";
 import axios from "axios";
 import { useEffect, useState } from "react";
 
-export const useUsers = () => {
-  const [data, setData] = useState<MemberDataType[]>([]);
+export const useUsers = (initialData: MemberDataType[] = []) => {
+  const [data, setData] = useState<MemberDataType[]>(initialData);
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
   const { toast } = useToast();
 
-  const fetchUsers = async () => {
-    const response = await axios.get(APIENDPOINTS.users.getAllUsers);
-    setData(response.data);
-  };
+  useEffect(() => {
+    if (initialData && initialData.length > 0) {
+      setData(initialData);
+      return;
+    }
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get(APIENDPOINTS.users.getAllUsers);
+        setData(response.data);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+    fetchUsers();
+  }, [initialData]);
+
 
   const handleDelete = async () => {
     console.log(selectedUserIds);
@@ -109,9 +121,7 @@ export const useUsers = () => {
     );
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+
 
   return {
     data,

@@ -34,7 +34,7 @@ router.route("/member/:teamid").get(getTeamMembersByTeamId)
 router.route("/member").get(getAllTeamMembers)
 router.route("/member").delete(removeTeamMember)
 
-router.route("/post/create").post(createAchievement)
+router.route("/post/create").post(validateBearerToken, createAchievement)
 router.route("/post/:achieveid").get(getAchievementById)
 router.route("/post").get(getAchievementsAll)
 router.route("/landing/approved").get(getApprovedAchievements)

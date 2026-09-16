@@ -1,22 +1,19 @@
-"use client";
-import { BACKENDURL } from "@/data/urls";
-import React, { useEffect, useState } from "react";
-import Select, { MultiValue } from "react-select";
+'use client';
+import { BACKENDURL } from '@/data/urls';
+import React, { useEffect, useState } from 'react';
+import Select, { MultiValue } from 'react-select';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
-import { getJWT, getUserID } from "@/data/cookies/getCookies";
-import { CldUploadButton } from "next-cloudinary";
-import { UploadCloud, Pencil } from "lucide-react";
-import ArticleEditor from "./ArticleEditor";
-import { uploadImageToCloud } from "@/utils/ImageUploadService";
-import Todo from "./article/NotePicker";
-import Notes from "./article/Notes";
-import HtmlContent from "./BlogComp/HtmlContent";
+import { getJWT, getUserID } from '@/data/cookies/getCookies';
+import { CldUploadButton } from 'next-cloudinary';
+import { UploadCloud, Pencil } from 'lucide-react';
+import ArticleEditor from './ArticleEditor';
+import { uploadImageToCloud } from '@/utils/ImageUploadService';
+import Todo from './article/NotePicker';
+import Notes from './article/Notes';
+import HtmlContent from './BlogComp/HtmlContent';
 
-
-
- // Import TextEditor component
-
+// Import TextEditor component
 
 interface BlogFormProps {
   onClose: () => void;
@@ -35,20 +32,24 @@ interface FormData {
 }
 
 const BlogModal: React.FC<BlogFormProps> = ({ onClose, fetchDataAll }) => {
-    const [content, setContent] = useState('<p>Initial content</p>');
-    const userids = Number(getUserID()) || 2;
+  const [content, setContent] = useState('<p>Initial content</p>');
+  const userids = Number(getUserID()) || 2;
   const [formData, setFormData] = useState<FormData>({
     userid: userids,
-    headline: "",
-    designation: "",
-    current_institution: "",
-    article: "",
+    headline: '',
+    designation: '',
+    current_institution: '',
+    article: '',
     photos: [],
-    blogtype: "",
+    blogtype: '',
     approval_status: true,
   });
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: string,
+  ) => {
     console.log(formData);
     setFormData((prev) => ({
       ...prev,
@@ -57,20 +58,28 @@ const BlogModal: React.FC<BlogFormProps> = ({ onClose, fetchDataAll }) => {
   };
 
   const validateForm = (): boolean => {
-    const requiredFields = ["headline", "designation", "current_institution", "article", "blogtype"];
+    const requiredFields = [
+      'headline',
+      'designation',
+      'current_institution',
+      'article',
+      'blogtype',
+    ];
     for (const field of requiredFields) {
-      if (!formData[field as keyof FormData] || formData[field as keyof FormData].toString().trim() === "") {
+      if (
+        !formData[field as keyof FormData] ||
+        formData[field as keyof FormData].toString().trim() === ''
+      ) {
         alert(`The field "${field}" is required.`);
         return false;
       }
     }
-    if (formData.photos.length === 0) {
-      alert("At least one photo is required.");
+    if (formData.photos.filter((photo) => photo.trim() !== '').length === 0) {
+      alert('At least one photo is required.');
       return false;
     }
     return true;
   };
-
 
   const removePhoto = (index: number) => {
     setFormData((prevData) => ({
@@ -80,38 +89,39 @@ const BlogModal: React.FC<BlogFormProps> = ({ onClose, fetchDataAll }) => {
   };
 
   const handleSubmit = async () => {
+    if (isUploading) {
+      alert('Please wait for the image upload to finish.');
+      return;
+    }
 
     if (!validateForm()) {
       return; // Exit if validation fails
     }
 
-    
     try {
-      console.log("All Data", formData);
-  
+      console.log('All Data', formData);
+
       const response = await axios.post(`${BACKENDURL}blog/create`, formData, {
         headers: {
           Authorization: `Bearer ${getJWT()}`,
         },
       });
-  
+
       // Check for successful response
       if (response.status === 201 || response.status === 200) {
         onClose();
         fetchDataAll();
-        
+
         // window.location.reload();
       }
     } catch (error) {
       // Handle error response
-      console.error("Error creating blog:", error);
-      
+      console.error('Error creating blog:', error);
     }
   };
-  
 
   const handleArticleChange = (newContent: string) => {
-    console.log("Article Change", newContent);
+    console.log('Article Change', newContent);
     setFormData((prev) => ({
       ...prev,
       article: newContent,
@@ -119,15 +129,19 @@ const BlogModal: React.FC<BlogFormProps> = ({ onClose, fetchDataAll }) => {
   };
 
   const handleFileUpload = async (file: File) => {
+    setIsUploading(true);
     try {
       const uploadedURL = await uploadImageToCloud(file);
       setFormData((prevData) => ({
         ...prevData,
         photos: [...prevData.photos, uploadedURL],
       }));
-      console.log("Image uploaded successfully:", uploadedURL);
+      console.log('Image uploaded successfully:', uploadedURL);
     } catch (error) {
-      console.error("Failed to upload image:", error);
+      console.error('Failed to upload image:', error);
+      alert('Image upload failed. Please try again.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -156,84 +170,101 @@ const BlogModal: React.FC<BlogFormProps> = ({ onClose, fetchDataAll }) => {
             type="text"
             placeholder="Headline"
             value={formData.headline}
-            onChange={(e) => handleChange(e, "headline")}
+            onChange={(e) => handleChange(e, 'headline')}
             className="w-full p-2 rounded bg-gray-900 border"
           />
           <input
             type="text"
             placeholder="Designation"
             value={formData.designation}
-            onChange={(e) => handleChange(e, "designation")}
+            onChange={(e) => handleChange(e, 'designation')}
             className="w-full p-2 rounded bg-gray-900 border"
           />
           <input
             type="text"
             placeholder="Current Institution"
             value={formData.current_institution}
-            onChange={(e) => handleChange(e, "current_institution")}
+            onChange={(e) => handleChange(e, 'current_institution')}
             className="w-full p-2 rounded bg-gray-900 border"
           />
-                    <input
+          <input
             type="text"
             placeholder="Blog Type"
             value={formData.blogtype}
-            onChange={(e) => handleChange(e, "blogtype")}
+            onChange={(e) => handleChange(e, 'blogtype')}
             className="w-full p-2 rounded bg-gray-900 border"
           />
 
           <div className="text-lg font-semibold mt-3">Article</div>
-          <ArticleEditor content={formData.article} onContentChange={handleArticleChange} />
+          <ArticleEditor
+            content={formData.article}
+            onContentChange={handleArticleChange}
+          />
           {/* <HtmlContent content={formData.article} />  // Privew*/}
           {/* <Todo/> */}
           <div className="space-y-4">
-          <label className="block text-sm font-medium">Upload Achievement Image</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="block w-full text-sm text-gray-500 bg-gray-700 rounded border border-gray-600 cursor-pointer"
-          />
-        </div>
-             {formData.photos && formData.photos.length > 0 && (
-  <div className="space-y-2">
-    <h3 className="text-lg font-semibold">Uploaded Photos</h3>
-    <div className="grid grid-cols-1 gap-4">
-    {formData.photos && formData.photos.length > 0 && (
-          <div className="space-y-2">
-           
-            <div className="grid grid-cols-4 gap-4">
-              {formData.photos.map((photoUrl, index) => (
-                <div key={index} className="relative flex flex-col items-center">
-                  <button
-                    onClick={() => removePhoto(index)}
-                    className="absolute top-2 left-2 bg-red-600 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center"
-                    aria-label="Remove photo"
-                  >
-                    &times;
-                  </button>
-                  <img src={photoUrl} alt={`Uploaded photo ${index + 1}`} className="w-full h-32 object-cover rounded" />
-                  <a href={photoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline mt-2">
-                    View Full Image
-                  </a>
-                </div>
-              ))}
-            </div>
+            <label className="block text-sm font-medium">
+              Upload Achievement Image
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              disabled={isUploading}
+              className="block w-full text-sm text-gray-500 bg-gray-700 rounded border border-gray-600 cursor-pointer"
+            />
           </div>
-        )}
-    </div>
-  </div>
-)}
-<div className="flex justify-end">
-          <button
-            onClick={handleSubmit}
-            className=" bg-red-600 text-white rounded px-4 py-2 mt-4"
-          >
-            Submit
-          </button>
+          {formData.photos && formData.photos.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold">Uploaded Photos</h3>
+              <div className="grid grid-cols-1 gap-4">
+                {formData.photos && formData.photos.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-4 gap-4">
+                      {formData.photos.map((photoUrl, index) => (
+                        <div
+                          key={index}
+                          className="relative flex flex-col items-center"
+                        >
+                          <button
+                            onClick={() => removePhoto(index)}
+                            className="absolute top-2 left-2 bg-red-600 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center"
+                            aria-label="Remove photo"
+                          >
+                            &times;
+                          </button>
+                          <img
+                            src={photoUrl}
+                            alt={`Uploaded photo ${index + 1}`}
+                            className="w-full h-32 object-cover rounded"
+                          />
+                          <a
+                            href={photoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 underline mt-2"
+                          >
+                            View Full Image
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end">
+            <button
+              onClick={handleSubmit}
+              disabled={isUploading}
+              className=" bg-red-600 text-white rounded px-4 py-2 mt-4"
+            >
+              {isUploading ? 'Uploading...' : 'Submit'}
+            </button>
           </div>
         </div>
       </div>
-     
     </div>
   );
 };
