@@ -1,4 +1,13 @@
 
+# Protected branches must only be updated through a pull request.
+current_branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)
+case "$current_branch" in
+	develop|stage)
+		echo "Direct commits to '$current_branch' are blocked. Create a pull request instead."
+		exit 1
+		;;
+esac
+
 # Run type checking on entire project
 npm run type-check --prefix client || exit 1
 
