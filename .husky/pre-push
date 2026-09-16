@@ -1,0 +1,12 @@
+# Protected branches must only be updated through a pull request.
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/develop|refs/heads/stage)
+      protected_branch=${remote_ref#refs/heads/}
+      echo "Direct pushes to '$protected_branch' are blocked. Create a pull request instead."
+      exit 1
+      ;;
+  esac
+done
+
+exit 0
